@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indonesia Wilayah & Kode Pos REST API Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Top Navigation Header -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <span class="flag-icon">🇮🇩</span>
+        <div>
+          <h1>Wilayah & Kode Pos API Indonesia</h1>
+          <p class="subtitle">Provinsi • Kab/Kota • Kecamatan • Desa • Dusun • RW • RT • Kode Pos</p>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <a href="/api/docs" target="_blank" class="btn btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Swagger Docs (/api/docs)
+        </a>
+        <a href="/api/stats" target="_blank" class="btn btn-secondary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          JSON Stats
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Summary Statistics Badges -->
+    <section class="stats-grid" id="stats-section">
+      <div class="stat-card">
+        <div class="stat-icon red">🏛️</div>
+        <div class="stat-info">
+          <span class="stat-label">Provinsi</span>
+          <h3 id="stat-provinsi">38</h3>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">🏙️</div>
+        <div class="stat-info">
+          <span class="stat-label">Kabupaten / Kota</span>
+          <h3 id="stat-kabupaten">514</h3>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon amber">🏘️</div>
+        <div class="stat-info">
+          <span class="stat-label">Kecamatan</span>
+          <h3 id="stat-kecamatan">7.285</h3>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">🏡</div>
+        <div class="stat-info">
+          <span class="stat-label">Desa / Kelurahan</span>
+          <h3 id="stat-desa">83.762</h3>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon yellow">📮</div>
+        <div class="stat-info">
+          <span class="stat-label">Kode Pos Terpetakan</span>
+          <h3 id="stat-kodepos">83.762</h3>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon teal">🌳</div>
+        <div class="stat-info">
+          <span class="stat-label">Dusun</span>
+          <h3 id="stat-dusun">-</h3>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">👥</div>
+        <div class="stat-info">
+          <span class="stat-label">RW</span>
+          <h3 id="stat-rw">-</h3>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">🏠</div>
+        <div class="stat-info">
+          <span class="stat-label">RT</span>
+          <h3 id="stat-rt">-</h3>
+        </div>
+      </div>
+    </section>
+
+    <!-- Global Search Bar -->
+    <section class="search-card">
+      <h2>🔍 Pencarian Cepat Wilayah & Kode Pos</h2>
+      <p class="search-desc">Ketik nama wilayah (contoh: <em>Bandung</em>, <em>Sarijadi</em>, <em>Gambir</em>), kode Kemendagri, atau 5 digit kode pos (contoh: <em>40152</em>, <em>10110</em>):</p>
+      <div class="search-box">
+        <input type="text" id="global-search-input" placeholder="Cari nama wilayah atau 5 digit kode pos..." autocomplete="off" />
+        <select id="search-level-filter">
+          <option value="all">Semua Tingkat & Kode Pos</option>
+          <option value="kodepos">📮 Kode Pos Saja</option>
+          <option value="provinsi">Provinsi</option>
+          <option value="kabupaten">Kabupaten / Kota</option>
+          <option value="kecamatan">Kecamatan</option>
+          <option value="desa">Desa / Kelurahan</option>
+          <option value="dusun">Dusun</option>
+          <option value="rw">RW</option>
+          <option value="rt">RT</option>
+        </select>
+        <button id="search-btn" class="btn btn-primary">Cari Data</button>
+      </div>
+      <div id="search-results-container" class="search-results hidden"></div>
+    </section>
+
+    <!-- Cascading Hierarchy Explorer -->
+    <section class="explorer-grid">
+      <div class="panel explorer-panel">
+        <div class="panel-header">
+          <h2>🧭 Penjelajah Hierarki Wilayah</h2>
+          <span class="badge">Cascading Explorer</span>
+        </div>
+
+        <div class="form-group">
+          <label for="select-provinsi">1. Pilih Provinsi:</label>
+          <select id="select-provinsi" class="form-control">
+            <option value="">-- Pilih Provinsi --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="select-kabupaten">2. Pilih Kabupaten / Kota:</label>
+          <select id="select-kabupaten" class="form-control" disabled>
+            <option value="">-- Pilih Kabupaten / Kota --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="select-kecamatan">3. Pilih Kecamatan:</label>
+          <select id="select-kecamatan" class="form-control" disabled>
+            <option value="">-- Pilih Kecamatan --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="select-desa">4. Pilih Desa / Kelurahan:</label>
+          <select id="select-desa" class="form-control" disabled>
+            <option value="">-- Pilih Desa / Kelurahan --</option>
+          </select>
+        </div>
+
+        <!-- Village Summary & Postal Code Badge -->
+        <div id="desa-info-badge" class="desa-info-card hidden">
+          <div class="desa-info-header">
+            <h4 id="desa-detail-title">Nama Desa</h4>
+            <span class="postal-badge" id="desa-postal-badge">📮 Kode Pos: -</span>
+          </div>
+          <p id="desa-detail-sub" class="text-muted">Hierarki alamat wilayah</p>
+        </div>
+
+        <!-- Lower level tabs -->
+        <div id="sub-levels-wrapper" class="sub-levels hidden">
+          <div class="sub-level-header">
+            <h3>Tingkat Komunitas di <span id="current-desa-name">Desa</span></h3>
+          </div>
+          
+          <div class="tab-buttons">
+            <button class="tab-btn active" data-tab="tab-dusun">🌳 Dusun (<span id="count-dusun">0</span>)</button>
+            <button class="tab-btn" data-tab="tab-rw">👥 RW (<span id="count-rw">0</span>)</button>
+            <button class="tab-btn" data-tab="tab-rt">🏠 RT (<span id="count-rt">0</span>)</button>
+          </div>
+
+          <div id="tab-dusun" class="tab-content active">
+            <div class="tab-toolbar">
+              <h4>Daftar Dusun / Lingkungan</h4>
+              <button class="btn btn-sm btn-outline" id="btn-add-dusun">+ Tambah Dusun</button>
+            </div>
+            <div id="dusun-list-container" class="item-list"></div>
+          </div>
+
+          <div id="tab-rw" class="tab-content">
+            <div class="tab-toolbar">
+              <h4>Daftar Rukun Warga (RW)</h4>
+              <button class="btn btn-sm btn-outline" id="btn-add-rw">+ Tambah RW</button>
+            </div>
+            <div id="rw-list-container" class="item-list"></div>
+          </div>
+
+          <div id="tab-rt" class="tab-content">
+            <div class="tab-toolbar">
+              <h4>Daftar Rukun Tetangga (RT)</h4>
+              <button class="btn btn-sm btn-outline" id="btn-add-rt">+ Tambah RT</button>
+            </div>
+            <div id="rt-list-container" class="item-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live JSON API Inspector Panel -->
+      <div class="panel api-panel">
+        <div class="panel-header">
+          <h2>⚡ Live API Response Inspector</h2>
+          <div class="api-header-actions">
+            <button id="btn-copy-url" class="btn btn-sm btn-secondary" title="Salin URL Endpoint">Copy URL</button>
+            <button id="btn-copy-json" class="btn btn-sm btn-secondary" title="Salin Format JSON">Copy JSON</button>
+          </div>
+        </div>
+
+        <div class="endpoint-bar">
+          <span class="method-badge">GET</span>
+          <input type="text" id="active-api-url" readonly value="/api/provinsi" />
+          <a id="link-open-tab" href="/api/provinsi" target="_blank" class="btn btn-sm btn-primary">Open Tab</a>
+        </div>
+
+        <div class="json-container">
+          <pre><code id="json-viewer">// Memuat respons API...</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Endpoints Reference Table -->
+    <section class="endpoints-reference panel">
+      <h2>📚 Panduan Cepat Endpoint REST API (Termasuk Kode Pos)</h2>
+      <div class="table-responsive">
+        <table class="api-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint URL</th>
+              <th>Deskripsi</th>
+              <th>Contoh Request</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/kodepos/40152</code></td>
+              <td>Cari wilayah dari 5 digit Kode Pos (Sarijadi, Sukasari)</td>
+              <td><a href="/api/kodepos/40152" target="_blank">/api/kodepos/40152</a></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/kodepos/10110</code></td>
+              <td>Cari wilayah dari Kode Pos 10110 (Gambir, Jakarta Pusat)</td>
+              <td><a href="/api/kodepos/10110" target="_blank">/api/kodepos/10110</a></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/provinsi</code></td>
+              <td>Daftar 38 provinsi di Indonesia (filter, sort, paging)</td>
+              <td><a href="/api/provinsi?page=1&limit=10" target="_blank">/api/provinsi?page=1&limit=10</a></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/kabupaten?provinsi_kode=32</code></td>
+              <td>Daftar kabupaten/kota di Jawa Barat (kode 32)</td>
+              <td><a href="/api/kabupaten?provinsi_kode=32" target="_blank">/api/kabupaten?provinsi_kode=32</a></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/kecamatan?kabupaten_kota_kode=32.73</code></td>
+              <td>Daftar kecamatan di Kota Bandung (kode 32.73)</td>
+              <td><a href="/api/kecamatan?kabupaten_kota_kode=32.73" target="_blank">/api/kecamatan?kabupaten_kota_kode=32.73</a></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/desa?kecamatan_kode=32.73.01</code></td>
+              <td>Daftar kelurahan di Sukasari, Kota Bandung (dengan kode pos)</td>
+              <td><a href="/api/desa?kecamatan_kode=32.73.01" target="_blank">/api/desa?kecamatan_kode=32.73.01</a></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/dusun?desa_kelurahan_kode=32.73.01.1004</code></td>
+              <td>Daftar dusun/lingkungan di Kelurahan Sarijadi</td>
+              <td><a href="/api/dusun?desa_kelurahan_kode=32.73.01.1004" target="_blank">/api/dusun?desa_kelurahan_kode=32.73.01.1004</a></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/rw?desa_kelurahan_kode=32.73.01.1004</code></td>
+              <td>Daftar RW di Kelurahan Sarijadi</td>
+              <td><a href="/api/rw?desa_kelurahan_kode=32.73.01.1004" target="_blank">/api/rw?desa_kelurahan_kode=32.73.01.1004</a></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/rt?rw_id=1</code></td>
+              <td>Daftar RT di RW ID 1</td>
+              <td><a href="/api/rt?rw_id=1" target="_blank">/api/rt?rw_id=1</a></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/search?q=40152</code></td>
+              <td>Pencarian multi-level berdasarkan kode pos atau nama tempat</td>
+              <td><a href="/api/search?q=40152" target="_blank">/api/search?q=40152</a></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/hierarchy/code/32.73.01.1004</code></td>
+              <td>Reverse breadcrumb hierarki dari kode kelurahan</td>
+              <td><a href="/api/hierarchy/code/32.73.01.1004" target="_blank">/api/hierarchy/code/32.73.01.1004</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <p>🇮🇩 Data Resmi Wilayah & Kode Pos Indonesia Kepmendagri • Node.js REST API</p>
+      <p class="footer-links">
+        <a href="/api/docs" target="_blank">Swagger Documentation</a> • 
+        <a href="/api/stats" target="_blank">Stats Endpoint</a> • 
+        <a href="/api/kodepos/40152" target="_blank">Sample Kode Pos</a> •
+        <a href="/api" target="_blank">API Root</a>
+      </p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

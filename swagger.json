@@ -1,0 +1,679 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "REST API Wilayah Administratif & Kode Pos Indonesia",
+    "version": "1.0.0",
+    "description": "API Lengkap 7 Tingkat Wilayah Administratif Indonesia (Provinsi, Kabupaten/Kota, Kecamatan, Desa/Kelurahan, Dusun, RW, dan RT) + Data Kode Pos Resmi berdasarkan Kepmendagri terbaru."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Development Server"
+    }
+  ],
+  "tags": [
+    { "name": "Statistik & Umum", "description": "Informasi ringkasan dan statistik wilayah" },
+    { "name": "Pencarian & Hierarki", "description": "Global search dan reverse breadcrumb hierarki wilayah" },
+    { "name": "Kode Pos", "description": "Pencarian dan penelusuran wilayah berdasarkan Kode Pos (5 Digit)" },
+    { "name": "Provinsi", "description": "Data Wilayah Tingkat I (38 Provinsi)" },
+    { "name": "Kabupaten / Kota", "description": "Data Wilayah Tingkat II (514 Kab/Kota)" },
+    { "name": "Kecamatan", "description": "Data Wilayah Tingkat III (7.200+ Kecamatan)" },
+    { "name": "Desa / Kelurahan", "description": "Data Wilayah Tingkat IV (83.000+ Desa/Kelurahan)" },
+    { "name": "Dusun / Lingkungan", "description": "Data Wilayah Sub-Desa (Dusun/Lingkungan/Banjar/Dukuh)" },
+    { "name": "RW (Rukun Warga)", "description": "Data Lembaga Kemasyarakatan RW" },
+    { "name": "RT (Rukun Tetangga)", "description": "Data Lembaga Kemasyarakatan RT" }
+  ],
+  "paths": {
+    "/api/stats": {
+      "get": {
+        "tags": ["Statistik & Umum"],
+        "summary": "Mendapatkan statistik ringkasan wilayah seluruh Indonesia",
+        "responses": {
+          "200": { "description": "Ringkasan statistik berhasil diambil" }
+        }
+      }
+    },
+    "/api/kodepos/{kodepos}": {
+      "get": {
+        "tags": ["Kode Pos"],
+        "summary": "Mencari desa/kelurahan, kecamatan, kabupaten, dan provinsi berdasarkan 5-digit Kode Pos",
+        "parameters": [
+          { "name": "kodepos", "in": "path", "required": true, "schema": { "type": "string" }, "example": "40152", "description": "5-digit Kode Pos Indonesia" }
+        ],
+        "responses": {
+          "200": { "description": "Daftar wilayah dengan kode pos tersebut berhasil dikembalikan" }
+        }
+      }
+    },
+    "/api/kodepos": {
+      "get": {
+        "tags": ["Kode Pos"],
+        "summary": "Mendapatkan daftar seluruh kode pos dengan pagination dan filter",
+        "parameters": [
+          { "name": "q", "in": "query", "schema": { "type": "string" }, "description": "Cari kode pos atau nama desa/kecamatan/kabupaten" },
+          { "name": "provinsi_kode", "in": "query", "schema": { "type": "string" }, "description": "Filter kode provinsi" },
+          { "name": "kabupaten_kota_kode", "in": "query", "schema": { "type": "string" }, "description": "Filter kode kabupaten/kota" },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } }
+        ],
+        "responses": {
+          "200": { "description": "Daftar kode pos berhasil diambil" }
+        }
+      }
+    },
+    "/api/search": {
+      "get": {
+        "tags": ["Pencarian & Hierarki"],
+        "summary": "Pencarian nama, kode wilayah, atau kode pos secara global",
+        "parameters": [
+          { "name": "q", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Kata kunci pencarian nama, kode, atau kode pos (misal: 'Bandung', 'Sarijadi', '40152')" },
+          { "name": "level", "in": "query", "required": false, "schema": { "type": "string", "enum": ["all", "provinsi", "kabupaten", "kecamatan", "desa", "dusun", "rw", "rt", "kodepos"] }, "description": "Filter pencarian pada level tertentu" },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "default": 20 }, "description": "Maksimal hasil per kategori (default: 20)" }
+        ],
+        "responses": {
+          "200": { "description": "Hasil pencarian berhasil dikembalikan" }
+        }
+      }
+    },
+    "/api/hierarchy/code/{kode}": {
+      "get": {
+        "tags": ["Pencarian & Hierarki"],
+        "summary": "Reverse breadcrumbs / hierarki lengkap dari kode Kemendagri",
+        "parameters": [
+          { "name": "kode", "in": "path", "required": true, "schema": { "type": "string" }, "example": "32.73.01.1004", "description": "Kode wilayah (Provinsi, Kab/Kota, Kecamatan, atau Desa)" }
+        ],
+        "responses": {
+          "200": { "description": "Hierarki wilayah berhasil diambil" }
+        }
+      }
+    },
+    "/api/hierarchy/rt/{id}": {
+      "get": {
+        "tags": ["Pencarian & Hierarki"],
+        "summary": "Hierarki lengkap alamat dari RT sampai Provinsi",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1, "description": "ID RT" }
+        ],
+        "responses": {
+          "200": { "description": "Hierarki lengkap RT berhasil diambil" }
+        }
+      }
+    },
+    "/api/provinsi": {
+      "get": {
+        "tags": ["Provinsi"],
+        "summary": "Mendapatkan daftar seluruh provinsi di Indonesia (dengan pagination & search)",
+        "parameters": [
+          { "name": "q", "in": "query", "schema": { "type": "string" }, "description": "Cari nama atau kode provinsi" },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["kode", "nama"], "default": "kode" } },
+          { "name": "order", "in": "query", "schema": { "type": "string", "enum": ["ASC", "DESC"], "default": "ASC" } }
+        ],
+        "responses": { "200": { "description": "Daftar provinsi berhasil diambil" } }
+      },
+      "post": {
+        "tags": ["Provinsi"],
+        "summary": "Menambahkan data provinsi baru",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["kode", "nama"],
+                "properties": {
+                  "kode": { "type": "string", "example": "99" },
+                  "nama": { "type": "string", "example": "PROVINSI BARU" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Provinsi baru berhasil ditambahkan" } }
+      }
+    },
+    "/api/provinsi/{kode}": {
+      "get": {
+        "tags": ["Provinsi"],
+        "summary": "Mendapatkan detail provinsi beserta statistik jumlah kabupaten/kecamatan/desa",
+        "parameters": [
+          { "name": "kode", "in": "path", "required": true, "schema": { "type": "string" }, "example": "32" },
+          { "name": "with_kabupaten", "in": "query", "schema": { "type": "boolean", "default": false } }
+        ],
+        "responses": { "200": { "description": "Detail provinsi berhasil diambil" } }
+      },
+      "put": {
+        "tags": ["Provinsi"],
+        "summary": "Memperbarui nama provinsi",
+        "parameters": [{ "name": "kode", "in": "path", "required": true, "schema": { "type": "string" }, "example": "32" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nama"],
+                "properties": { "nama": { "type": "string", "example": "JAWA BARAT" } }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Provinsi berhasil diperbarui" } }
+      },
+      "delete": {
+        "tags": ["Provinsi"],
+        "summary": "Menghapus provinsi beserta relasi turunannya",
+        "parameters": [{ "name": "kode", "in": "path", "required": true, "schema": { "type": "string" }, "example": "99" }],
+        "responses": { "200": { "description": "Provinsi berhasil dihapus" } }
+      }
+    },
+    "/api/provinsi/{kode}/kabupaten": {
+      "get": {
+        "tags": ["Provinsi"],
+        "summary": "Mendapatkan daftar kabupaten/kota di provinsi tertentu",
+        "parameters": [
+          { "name": "kode", "in": "path", "required": true, "schema": { "type": "string" }, "example": "32" },
+          { "name": "tipe", "in": "query", "schema": { "type": "string", "enum": ["KABUPATEN", "KOTA"] } },
+          { "name": "q", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Daftar kabupaten/kota berhasil diambil" } }
+      }
+    },
+    "/api/kabupaten": {
+      "get": {
+        "tags": ["Kabupaten / Kota"],
+        "summary": "Mendapatkan daftar kabupaten/kota (dengan filter provinsi, tipe, search, pagination)",
+        "parameters": [
+          { "name": "provinsi_kode", "in": "query", "schema": { "type": "string" }, "description": "Filter berdasarkan kode provinsi (misal: '32')" },
+          { "name": "tipe", "in": "query", "schema": { "type": "string", "enum": ["KABUPATEN", "KOTA"] } },
+          { "name": "q", "in": "query", "schema": { "type": "string" }, "description": "Cari nama kabupaten/kota" },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } }
+        ],
+        "responses": { "200": { "description": "Daftar kabupaten/kota berhasil diambil" } }
+      },
+      "post": {
+        "tags": ["Kabupaten / Kota"],
+        "summary": "Menambahkan data kabupaten/kota baru",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["kode", "provinsi_kode", "nama"],
+                "properties": {
+                  "kode": { "type": "string", "example": "32.99" },
+                  "provinsi_kode": { "type": "string", "example": "32" },
+                  "tipe": { "type": "string", "enum": ["KABUPATEN", "KOTA"], "default": "KABUPATEN" },
+                  "nama": { "type": "string", "example": "KABUPATEN BARU" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Kabupaten/Kota baru berhasil ditambahkan" } }
+      }
+    },
+    "/api/kabupaten/{kode}": {
+      "get": {
+        "tags": ["Kabupaten / Kota"],
+        "summary": "Mendapatkan detail kabupaten/kota",
+        "parameters": [
+          { "name": "kode", "in": "path", "required": true, "schema": { "type": "string" }, "example": "32.73" },
+          { "name": "with_kecamatan", "in": "query", "schema": { "type": "boolean", "default": false } }
+        ],
+        "responses": { "200": { "description": "Detail kabupaten/kota berhasil diambil" } }
+      },
+      "put": {
+        "tags": ["Kabupaten / Kota"],
+        "summary": "Memperbarui data kabupaten/kota",
+        "parameters": [{ "name": "kode", "in": "path", "required": true, "schema": { "type": "string" }, "example": "32.73" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nama": { "type": "string", "example": "KOTA BANDUNG" },
+                  "tipe": { "type": "string", "enum": ["KABUPATEN", "KOTA"] },
+                  "provinsi_kode": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Data berhasil diperbarui" } }
+      },
+      "delete": {
+        "tags": ["Kabupaten / Kota"],
+        "summary": "Menghapus kabupaten/kota",
+        "parameters": [{ "name": "kode", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Berhasil dihapus" } }
+      }
+    },
+    "/api/kabupaten/{kode}/kecamatan": {
+      "get": {
+        "tags": ["Kabupaten / Kota"],
+        "summary": "Mendapatkan daftar kecamatan di kabupaten/kota tertentu",
+        "parameters": [
+          { "name": "kode", "in": "path", "required": true, "schema": { "type": "string" }, "example": "32.73" },
+          { "name": "q", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Daftar kecamatan berhasil diambil" } }
+      }
+    },
+    "/api/kecamatan": {
+      "get": {
+        "tags": ["Kecamatan"],
+        "summary": "Mendapatkan daftar kecamatan (filter by kabupaten, provinsi, search)",
+        "parameters": [
+          { "name": "kabupaten_kota_kode", "in": "query", "schema": { "type": "string" }, "example": "32.73" },
+          { "name": "provinsi_kode", "in": "query", "schema": { "type": "string" } },
+          { "name": "q", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } }
+        ],
+        "responses": { "200": { "description": "Daftar kecamatan berhasil diambil" } }
+      },
+      "post": {
+        "tags": ["Kecamatan"],
+        "summary": "Menambahkan data kecamatan baru",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["kode", "kabupaten_kota_kode", "nama"],
+                "properties": {
+                  "kode": { "type": "string", "example": "32.73.99" },
+                  "kabupaten_kota_kode": { "type": "string", "example": "32.73" },
+                  "nama": { "type": "string", "example": "KECAMATAN BARU" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Kecamatan baru berhasil ditambahkan" } }
+      }
+    },
+    "/api/kecamatan/{kode}": {
+      "get": {
+        "tags": ["Kecamatan"],
+        "summary": "Mendapatkan detail kecamatan",
+        "parameters": [
+          { "name": "kode", "in": "path", "required": true, "schema": { "type": "string" }, "example": "32.73.01" },
+          { "name": "with_desa", "in": "query", "schema": { "type": "boolean", "default": false } }
+        ],
+        "responses": { "200": { "description": "Detail kecamatan berhasil diambil" } }
+      },
+      "put": {
+        "tags": ["Kecamatan"],
+        "summary": "Memperbarui data kecamatan",
+        "parameters": [{ "name": "kode", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nama": { "type": "string", "example": "SUKASARI BARU" },
+                  "kabupaten_kota_kode": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Data berhasil diperbarui" } }
+      },
+      "delete": {
+        "tags": ["Kecamatan"],
+        "summary": "Menghapus kecamatan",
+        "parameters": [{ "name": "kode", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Berhasil dihapus" } }
+      }
+    },
+    "/api/kecamatan/{kode}/desa": {
+      "get": {
+        "tags": ["Kecamatan"],
+        "summary": "Mendapatkan daftar desa/kelurahan di kecamatan tertentu",
+        "parameters": [
+          { "name": "kode", "in": "path", "required": true, "schema": { "type": "string" }, "example": "32.73.01" },
+          { "name": "tipe", "in": "query", "schema": { "type": "string", "enum": ["DESA", "KELURAHAN"] } },
+          { "name": "q", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Daftar desa/kelurahan berhasil diambil" } }
+      }
+    },
+    "/api/desa": {
+      "get": {
+        "tags": ["Desa / Kelurahan"],
+        "summary": "Mendapatkan daftar desa/kelurahan (filter kecamatan, kab/kota, provinsi, search)",
+        "parameters": [
+          { "name": "kecamatan_kode", "in": "query", "schema": { "type": "string" }, "example": "32.73.01" },
+          { "name": "kabupaten_kota_kode", "in": "query", "schema": { "type": "string" } },
+          { "name": "provinsi_kode", "in": "query", "schema": { "type": "string" } },
+          { "name": "tipe", "in": "query", "schema": { "type": "string", "enum": ["DESA", "KELURAHAN", "GAMPONG", "NAGARI", "KAMPUNG"] } },
+          { "name": "q", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } }
+        ],
+        "responses": { "200": { "description": "Daftar desa/kelurahan berhasil diambil" } }
+      },
+      "post": {
+        "tags": ["Desa / Kelurahan"],
+        "summary": "Menambahkan data desa/kelurahan baru",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["kode", "kecamatan_kode", "nama"],
+                "properties": {
+                  "kode": { "type": "string", "example": "32.73.01.9999" },
+                  "kecamatan_kode": { "type": "string", "example": "32.73.01" },
+                  "tipe": { "type": "string", "enum": ["DESA", "KELURAHAN"], "default": "DESA" },
+                  "nama": { "type": "string", "example": "DESA CONTOH" },
+                  "kode_pos": { "type": "string", "example": "40152" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Desa/Kelurahan baru berhasil ditambahkan" } }
+      }
+    },
+    "/api/desa/{kode}": {
+      "get": {
+        "tags": ["Desa / Kelurahan"],
+        "summary": "Mendapatkan detail desa/kelurahan beserta kode pos",
+        "parameters": [
+          { "name": "kode", "in": "path", "required": true, "schema": { "type": "string" }, "example": "32.73.01.1004" },
+          { "name": "with_dusun", "in": "query", "schema": { "type": "boolean", "default": false } },
+          { "name": "with_rw", "in": "query", "schema": { "type": "boolean", "default": false } }
+        ],
+        "responses": { "200": { "description": "Detail desa/kelurahan berhasil diambil" } }
+      },
+      "put": {
+        "tags": ["Desa / Kelurahan"],
+        "summary": "Memperbarui data desa/kelurahan",
+        "parameters": [{ "name": "kode", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nama": { "type": "string" },
+                  "tipe": { "type": "string", "enum": ["DESA", "KELURAHAN"] },
+                  "kecamatan_kode": { "type": "string" },
+                  "kode_pos": { "type": "string", "example": "40152" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Data berhasil diperbarui" } }
+      },
+      "delete": {
+        "tags": ["Desa / Kelurahan"],
+        "summary": "Menghapus desa/kelurahan",
+        "parameters": [{ "name": "kode", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Berhasil dihapus" } }
+      }
+    },
+    "/api/desa/{kode}/dusun": {
+      "get": {
+        "tags": ["Desa / Kelurahan"],
+        "summary": "Mendapatkan daftar dusun di desa/kelurahan tertentu",
+        "parameters": [{ "name": "kode", "in": "path", "required": true, "schema": { "type": "string" }, "example": "32.73.01.1004" }],
+        "responses": { "200": { "description": "Daftar dusun berhasil diambil" } }
+      }
+    },
+    "/api/desa/{kode}/rw": {
+      "get": {
+        "tags": ["Desa / Kelurahan"],
+        "summary": "Mendapatkan daftar RW di desa/kelurahan tertentu",
+        "parameters": [{ "name": "kode", "in": "path", "required": true, "schema": { "type": "string" }, "example": "32.73.01.1004" }],
+        "responses": { "200": { "description": "Daftar RW berhasil diambil" } }
+      }
+    },
+    "/api/dusun": {
+      "get": {
+        "tags": ["Dusun / Lingkungan"],
+        "summary": "Mendapatkan daftar dusun/lingkungan/banjar/dukuh",
+        "parameters": [
+          { "name": "desa_kelurahan_kode", "in": "query", "schema": { "type": "string" } },
+          { "name": "q", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } }
+        ],
+        "responses": { "200": { "description": "Daftar dusun berhasil diambil" } }
+      },
+      "post": {
+        "tags": ["Dusun / Lingkungan"],
+        "summary": "Menambahkan data dusun baru",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["desa_kelurahan_kode", "nama"],
+                "properties": {
+                  "desa_kelurahan_kode": { "type": "string", "example": "32.73.01.1004" },
+                  "nama": { "type": "string", "example": "Dusun Krajan" },
+                  "kepala_dusun": { "type": "string", "example": "Bambang Sutrisno" },
+                  "keterangan": { "type": "string", "example": "Dusun wilayah barat desa" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Dusun baru berhasil dibuat" } }
+      }
+    },
+    "/api/dusun/{id}": {
+      "get": {
+        "tags": ["Dusun / Lingkungan"],
+        "summary": "Mendapatkan detail dusun",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 },
+          { "name": "with_rw", "in": "query", "schema": { "type": "boolean", "default": false } }
+        ],
+        "responses": { "200": { "description": "Detail dusun berhasil diambil" } }
+      },
+      "put": {
+        "tags": ["Dusun / Lingkungan"],
+        "summary": "Memperbarui data dusun",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nama": { "type": "string" },
+                  "kepala_dusun": { "type": "string" },
+                  "keterangan": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Data dusun berhasil diperbarui" } }
+      },
+      "delete": {
+        "tags": ["Dusun / Lingkungan"],
+        "summary": "Menghapus dusun",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Berhasil dihapus" } }
+      }
+    },
+    "/api/rw": {
+      "get": {
+        "tags": ["RW (Rukun Warga)"],
+        "summary": "Mendapatkan daftar RW",
+        "parameters": [
+          { "name": "desa_kelurahan_kode", "in": "query", "schema": { "type": "string" } },
+          { "name": "dusun_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "nomor_rw", "in": "query", "schema": { "type": "string" } },
+          { "name": "q", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } }
+        ],
+        "responses": { "200": { "description": "Daftar RW berhasil diambil" } }
+      },
+      "post": {
+        "tags": ["RW (Rukun Warga)"],
+        "summary": "Menambahkan data RW baru",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["desa_kelurahan_kode", "nomor_rw"],
+                "properties": {
+                  "desa_kelurahan_kode": { "type": "string", "example": "32.73.01.1004" },
+                  "dusun_id": { "type": "integer", "nullable": true, "example": 1 },
+                  "nomor_rw": { "type": "string", "example": "RW 01" },
+                  "nama_ketua": { "type": "string", "example": "Hendra Gunawan" },
+                  "keterangan": { "type": "string", "example": "Lingkungan perumahan barat" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "RW baru berhasil ditambahkan" } }
+      }
+    },
+    "/api/rw/{id}": {
+      "get": {
+        "tags": ["RW (Rukun Warga)"],
+        "summary": "Mendapatkan detail RW",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 },
+          { "name": "with_rt", "in": "query", "schema": { "type": "boolean", "default": false } }
+        ],
+        "responses": { "200": { "description": "Detail RW berhasil diambil" } }
+      },
+      "put": {
+        "tags": ["RW (Rukun Warga)"],
+        "summary": "Memperbarui data RW",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nomor_rw": { "type": "string" },
+                  "nama_ketua": { "type": "string" },
+                  "keterangan": { "type": "string" },
+                  "dusun_id": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Data RW berhasil diperbarui" } }
+      },
+      "delete": {
+        "tags": ["RW (Rukun Warga)"],
+        "summary": "Menghapus RW",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Berhasil dihapus" } }
+      }
+    },
+    "/api/rw/{id}/rt": {
+      "get": {
+        "tags": ["RW (Rukun Warga)"],
+        "summary": "Mendapatkan daftar RT di RW tertentu",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 }],
+        "responses": { "200": { "description": "Daftar RT berhasil diambil" } }
+      }
+    },
+    "/api/rt": {
+      "get": {
+        "tags": ["RT (Rukun Tetangga)"],
+        "summary": "Mendapatkan daftar RT",
+        "parameters": [
+          { "name": "rw_id", "in": "query", "schema": { "type": "integer" }, "example": 1 },
+          { "name": "desa_kelurahan_kode", "in": "query", "schema": { "type": "string" } },
+          { "name": "nomor_rt", "in": "query", "schema": { "type": "string" } },
+          { "name": "q", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } }
+        ],
+        "responses": { "200": { "description": "Daftar RT berhasil diambil" } }
+      },
+      "post": {
+        "tags": ["RT (Rukun Tetangga)"],
+        "summary": "Menambahkan data RT baru",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["rw_id", "nomor_rt"],
+                "properties": {
+                  "rw_id": { "type": "integer", "example": 1 },
+                  "nomor_rt": { "type": "string", "example": "RT 01" },
+                  "nama_ketua": { "type": "string", "example": "Budi Santoso" },
+                  "keterangan": { "type": "string", "example": "Jalan Melati Blok A" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "RT baru berhasil ditambahkan" } }
+      }
+    },
+    "/api/rt/{id}": {
+      "get": {
+        "tags": ["RT (Rukun Tetangga)"],
+        "summary": "Mendapatkan detail RT beserta hierarki lengkap",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 }],
+        "responses": { "200": { "description": "Detail RT berhasil diambil" } }
+      },
+      "put": {
+        "tags": ["RT (Rukun Tetangga)"],
+        "summary": "Memperbarui data RT",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nomor_rt": { "type": "string" },
+                  "nama_ketua": { "type": "string" },
+                  "keterangan": { "type": "string" },
+                  "rw_id": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Data RT berhasil diperbarui" } }
+      },
+      "delete": {
+        "tags": ["RT (Rukun Tetangga)"],
+        "summary": "Menghapus RT",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Berhasil dihapus" } }
+      }
+    }
+  }
+}

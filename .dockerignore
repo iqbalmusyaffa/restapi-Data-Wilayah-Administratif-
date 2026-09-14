@@ -1,0 +1,9 @@
+node_modules
+npm-debug.log
+.env
+.git
+.gitignore
+data/wilayah_raw.sql
+data/wilayah_kodepos_raw.sql
+data/*.db-wal
+data/*.db-shm

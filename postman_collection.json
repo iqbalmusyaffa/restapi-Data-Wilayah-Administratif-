@@ -1,0 +1,272 @@
+{
+  "info": {
+    "name": "REST API Wilayah Administratif Indonesia (7 Tingkat)",
+    "description": "Koleksi Postman lengkap untuk mengakses dan mengelola data Provinsi, Kabupaten/Kota, Kecamatan, Desa/Kelurahan, Dusun, RW, dan RT se-Indonesia.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Statistik & Penemuan",
+      "item": [
+        {
+          "name": "Root Discovery",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api", "host": ["{{baseUrl}}"], "path": ["api"] }
+          }
+        },
+        {
+          "name": "Statistik Total Wilayah",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/stats", "host": ["{{baseUrl}}"], "path": ["api", "stats"] }
+          }
+        },
+        {
+          "name": "Global Search (Semua Tingkat)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/search?q=Bandung",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "search"],
+              "query": [{ "key": "q", "value": "Bandung" }]
+            }
+          }
+        },
+        {
+          "name": "Reverse Hierarchy (Kode Desa)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/hierarchy/code/32.73.01.1004", "host": ["{{baseUrl}}"], "path": ["api", "hierarchy", "code", "32.73.01.1004"] }
+          }
+        },
+        {
+          "name": "Reverse Hierarchy (ID RT)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/hierarchy/rt/1", "host": ["{{baseUrl}}"], "path": ["api", "hierarchy", "rt", "1"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Provinsi",
+      "item": [
+        {
+          "name": "Daftar 38 Provinsi",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/provinsi?limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "provinsi"],
+              "query": [{ "key": "limit", "value": "50" }]
+            }
+          }
+        },
+        {
+          "name": "Detail Provinsi (Jawa Barat)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/provinsi/32?with_kabupaten=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "provinsi", "32"],
+              "query": [{ "key": "with_kabupaten", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "Daftar Kab/Kota di Provinsi",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/provinsi/32/kabupaten", "host": ["{{baseUrl}}"], "path": ["api", "provinsi", "32", "kabupaten"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Kabupaten & Kota",
+      "item": [
+        {
+          "name": "Daftar Kabupaten/Kota di Jabar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/kabupaten?provinsi_kode=32",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "kabupaten"],
+              "query": [{ "key": "provinsi_kode", "value": "32" }]
+            }
+          }
+        },
+        {
+          "name": "Detail Kota Bandung",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/kabupaten/32.73", "host": ["{{baseUrl}}"], "path": ["api", "kabupaten", "32.73"] }
+          }
+        },
+        {
+          "name": "Daftar Kecamatan di Kota Bandung",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/kabupaten/32.73/kecamatan", "host": ["{{baseUrl}}"], "path": ["api", "kabupaten", "32.73", "kecamatan"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Kecamatan",
+      "item": [
+        {
+          "name": "Detail Kecamatan Sukasari",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/kecamatan/32.73.01", "host": ["{{baseUrl}}"], "path": ["api", "kecamatan", "32.73.01"] }
+          }
+        },
+        {
+          "name": "Daftar Desa/Kelurahan di Kec. Sukasari",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/kecamatan/32.73.01/desa", "host": ["{{baseUrl}}"], "path": ["api", "kecamatan", "32.73.01", "desa"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Desa & Kelurahan",
+      "item": [
+        {
+          "name": "Detail Kelurahan Sarijadi",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/desa/32.73.01.1004?with_dusun=true&with_rw=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "desa", "32.73.01.1004"],
+              "query": [
+                { "key": "with_dusun", "value": "true" },
+                { "key": "with_rw", "value": "true" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Daftar Dusun di Desa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/desa/32.73.01.1004/dusun", "host": ["{{baseUrl}}"], "path": ["api", "desa", "32.73.01.1004", "dusun"] }
+          }
+        },
+        {
+          "name": "Daftar RW di Desa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/desa/32.73.01.1004/rw", "host": ["{{baseUrl}}"], "path": ["api", "desa", "32.73.01.1004", "rw"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Dusun / Lingkungan",
+      "item": [
+        {
+          "name": "Daftar Dusun",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/dusun", "host": ["{{baseUrl}}"], "path": ["api", "dusun"] }
+          }
+        },
+        {
+          "name": "Tambah Dusun Baru",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"desa_kelurahan_kode\": \"32.73.01.1004\",\n  \"nama\": \"Dusun Baru\",\n  \"kepala_dusun\": \"Ahmad\",\n  \"keterangan\": \"Wilayah dusun selatan\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/dusun", "host": ["{{baseUrl}}"], "path": ["api", "dusun"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. RW (Rukun Warga)",
+      "item": [
+        {
+          "name": "Daftar RW",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/rw", "host": ["{{baseUrl}}"], "path": ["api", "rw"] }
+          }
+        },
+        {
+          "name": "Tambah RW Baru",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"desa_kelurahan_kode\": \"32.73.01.1004\",\n  \"nomor_rw\": \"RW 08\",\n  \"nama_ketua\": \"Budi Santoso\",\n  \"keterangan\": \"Blok C\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/rw", "host": ["{{baseUrl}}"], "path": ["api", "rw"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. RT (Rukun Tetangga)",
+      "item": [
+        {
+          "name": "Daftar RT",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/rt", "host": ["{{baseUrl}}"], "path": ["api", "rt"] }
+          }
+        },
+        {
+          "name": "Tambah RT Baru",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rw_id\": 1,\n  \"nomor_rt\": \"RT 01\",\n  \"nama_ketua\": \"Eko Purnomo\",\n  \"keterangan\": \"Gang Melati No 1-20\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/rt", "host": ["{{baseUrl}}"], "path": ["api", "rt"] }
+          }
+        }
+      ]
+    }
+  ]
+}

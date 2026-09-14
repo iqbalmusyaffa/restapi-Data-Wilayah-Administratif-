@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  indonesia-wilayah-api:
+    build: .
+    container_name: indonesia-wilayah-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - DATABASE_PATH=./data/wilayah_indonesia.db
+    volumes:
+      - sqlite_data:/app/data
+
+volumes:
+  sqlite_data:

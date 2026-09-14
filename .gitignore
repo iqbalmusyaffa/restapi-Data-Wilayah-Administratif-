@@ -1,0 +1,55 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Environment Variables (PENTING: Jangan upload file .env yang berisi konfigurasi rahasia)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# Kecualikan file contoh konfigurasi agar tetap ter-upload ke Git
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Diagnostic & Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary SQLite cache download files (dibuat otomatis saat seeder berjalan)
+data/wilayah_raw.sql
+data/wilayah_kodepos_raw.sql
+data/*.db-wal
+data/*.db-shm
+
+# Optional: SQLite Database file
+# (Data database dapat di-generate otomatis kapan saja dengan: npm run seed)
+data/*.db
+!data/.gitkeep
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor & IDE Directories
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.fleet/

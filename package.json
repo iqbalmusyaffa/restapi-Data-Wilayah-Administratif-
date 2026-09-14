@@ -1,0 +1,37 @@
+{
+  "name": "indonesia-wilayah-rest-api",
+  "version": "1.0.0",
+  "description": "REST API Lengkap Data Wilayah Indonesia: 38 Provinsi, 514 Kab/Kota, 7.200+ Kecamatan, 83.000+ Desa/Kelurahan, Dusun, RW, dan RT",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "seed": "node src/scripts/seed.js",
+    "seed:sample": "node src/scripts/seed-sample.js",
+    "test": "node tests/api.test.js"
+  },
+  "keywords": [
+    "indonesia",
+    "wilayah",
+    "provinsi",
+    "kabupaten",
+    "kota",
+    "kecamatan",
+    "kelurahan",
+    "desa",
+    "dusun",
+    "rw",
+    "rt",
+    "kemendagri",
+    "rest-api",
+    "express"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "swagger-ui-express": "^5.0.1"
+  }
+}
