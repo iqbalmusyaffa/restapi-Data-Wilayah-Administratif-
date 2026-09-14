@@ -3,6 +3,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const { db, initSchema, dbPath } = require('../config/database');
+const { PROVINSI_METADATA, KABUPATEN_IBUKOTA } = require('../data/metadata');
 
 const SQL_URL = 'https://raw.githubusercontent.com/cahyadsn/wilayah/master/db/wilayah.sql';
 const KODEPOS_URL = 'https://raw.githubusercontent.com/cahyadsn/wilayah_kodepos/master/db/wilayah_kodepos.sql';
@@ -69,8 +70,14 @@ function parseAndSeedData(sqlText) {
     DELETE FROM provinsi;
   `);
 
-  const insertProvinsi = db.prepare('INSERT INTO provinsi (kode, nama) VALUES (?, ?)');
-  const insertKabupaten = db.prepare('INSERT INTO kabupaten_kota (kode, provinsi_kode, tipe, nama) VALUES (?, ?, ?, ?)');
+  const insertProvinsi = db.prepare(`
+    INSERT INTO provinsi (kode, nama, ibukota, zona_waktu, pulau, latitude, longitude)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+  const insertKabupaten = db.prepare(`
+    INSERT INTO kabupaten_kota (kode, provinsi_kode, tipe, nama, ibukota, zona_waktu, latitude, longitude)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
   const insertKecamatan = db.prepare('INSERT INTO kecamatan (kode, kabupaten_kota_kode, nama) VALUES (?, ?, ?)');
   const insertDesa = db.prepare('INSERT INTO desa_kelurahan (kode, kecamatan_kode, tipe, nama) VALUES (?, ?, ?, ?)');
 
@@ -95,15 +102,42 @@ function parseAndSeedData(sqlText) {
       const parts = kode.split('.');
 
       if (parts.length === 1) {
-        insertProvinsi.run(kode, nama);
+        // PROVINSI + METADATA
+        const meta = PROVINSI_METADATA[kode] || {};
+        insertProvinsi.run(
+          kode,
+          nama,
+          meta.ibukota || null,
+          meta.zona_waktu || 'WIB',
+          meta.pulau || 'Lainnya',
+          meta.latitude || null,
+          meta.longitude || null
+        );
         provCount++;
       } else if (parts.length === 2) {
+        // KABUPATEN / KOTA + METADATA
         const provKode = parts[0];
+        const provMeta = PROVINSI_METADATA[provKode] || {};
         let tipe = 'KABUPATEN';
         if (nama.toUpperCase().startsWith('KOTA ') || nama.toUpperCase().startsWith('KOTA ADM')) {
           tipe = 'KOTA';
         }
-        insertKabupaten.run(kode, provKode, tipe, nama);
+        
+        let ibukota = KABUPATEN_IBUKOTA[kode] || null;
+        if (!ibukota && tipe === 'KOTA') {
+          ibukota = nama;
+        }
+
+        insertKabupaten.run(
+          kode,
+          provKode,
+          tipe,
+          nama,
+          ibukota,
+          provMeta.zona_waktu || 'WIB',
+          null,
+          null
+        );
         kabCount++;
       } else if (parts.length === 3) {
         const kabKode = `${parts[0]}.${parts[1]}`;
@@ -130,8 +164,8 @@ function parseAndSeedData(sqlText) {
     }
 
     db.exec('COMMIT;');
-    console.log(`[Seed] Berhasil mengimpor data utama:`);
-    console.log(`  - Provinsi         : ${provCount.toLocaleString('id-ID')}`);
+    console.log(`[Seed] Berhasil mengimpor data utama dengan metadata:`);
+    console.log(`  - Provinsi         : ${provCount.toLocaleString('id-ID')} (Ibukota, Zona Waktu, Pulau, GPS)`);
     console.log(`  - Kabupaten / Kota : ${kabCount.toLocaleString('id-ID')}`);
     console.log(`  - Kecamatan        : ${kecCount.toLocaleString('id-ID')}`);
     console.log(`  - Desa / Kelurahan : ${desaCount.toLocaleString('id-ID')}`);
@@ -144,7 +178,6 @@ function parseAndSeedData(sqlText) {
 
 function parseAndSeedKodepos(kodeposSql) {
   console.log('[Seed] Memulai pemetaan data Kode Pos ke Desa/Kelurahan...');
-  // Format: ('11.01.01.2001', '23773')
   const kpRegex = /\('([^']+)',\s*'([^']+)'\)/g;
   const updateDesaKodepos = db.prepare('UPDATE desa_kelurahan SET kode_pos = ? WHERE kode = ?');
 
@@ -243,7 +276,7 @@ async function run() {
   try {
     const startTime = Date.now();
     console.log('====================================================');
-    console.log(' SEEDER DATA WILAYAH & KODE POS INDONESIA LENGKAP');
+    console.log(' SEEDER WILAYAH, METADATA, & KODE POS INDONESIA');
     console.log('====================================================');
 
     const sqlText = await downloadFile(SQL_URL, CACHE_FILE, 'Data Wilayah');

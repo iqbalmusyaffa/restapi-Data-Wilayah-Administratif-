@@ -9,10 +9,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const statRw = document.getElementById('stat-rw');
   const statRt = document.getElementById('stat-rt');
 
+  const filterPulau = document.getElementById('filter-pulau');
+  const filterZona = document.getElementById('filter-zona');
+  const btnShowPulau = document.getElementById('btn-show-pulau');
+  const btnShowZona = document.getElementById('btn-show-zona');
+
   const selectProvinsi = document.getElementById('select-provinsi');
   const selectKabupaten = document.getElementById('select-kabupaten');
   const selectKecamatan = document.getElementById('select-kecamatan');
   const selectDesa = document.getElementById('select-desa');
+
+  const provinsiInfoBadge = document.getElementById('provinsi-info-badge');
+  const provDetailTitle = document.getElementById('prov-detail-title');
+  const provZonaBadge = document.getElementById('prov-zona-badge');
+  const provPulauBadge = document.getElementById('prov-pulau-badge');
+  const provDetailSub = document.getElementById('prov-detail-sub');
 
   const desaInfoBadge = document.getElementById('desa-info-badge');
   const desaDetailTitle = document.getElementById('desa-detail-title');
@@ -41,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnCopyUrl = document.getElementById('btn-copy-url');
   const btnCopyJson = document.getElementById('btn-copy-json');
 
-  let activeData = null;
+  let provinsiCache = [];
 
   // 1. Fetch & display statistics
   async function loadStats() {
@@ -73,7 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch(endpoint);
       const json = await res.json();
-      activeData = json;
       jsonViewer.textContent = JSON.stringify(json, null, 2);
       return json;
     } catch (err) {
@@ -82,19 +92,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 2. Load Provinsi list
+  // 2. Load Provinsi list with filters
   async function loadProvinsi() {
-    const json = await fetchAndInspect('/api/provinsi?limit=100');
+    const pulauVal = filterPulau.value;
+    const zonaVal = filterZona.value;
+
+    let endpoint = '/api/provinsi?limit=100';
+    if (pulauVal) endpoint += `&pulau=${encodeURIComponent(pulauVal)}`;
+    if (zonaVal) endpoint += `&zona_waktu=${encodeURIComponent(zonaVal)}`;
+
+    const json = await fetchAndInspect(endpoint);
     if (json && json.data) {
+      provinsiCache = json.data;
       selectProvinsi.innerHTML = '<option value="">-- Pilih Provinsi --</option>';
       json.data.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.kode;
-        opt.textContent = `${p.kode} - ${p.nama}`;
+        opt.textContent = `${p.kode} - ${p.nama} (${p.pulau} • ${p.zona_waktu})`;
         selectProvinsi.appendChild(opt);
       });
     }
   }
+
+  filterPulau.addEventListener('change', () => {
+    loadProvinsi();
+    selectProvinsi.dispatchEvent(new Event('change'));
+  });
+
+  filterZona.addEventListener('change', () => {
+    loadProvinsi();
+    selectProvinsi.dispatchEvent(new Event('change'));
+  });
+
+  btnShowPulau.addEventListener('click', () => fetchAndInspect('/api/pulau'));
+  btnShowZona.addEventListener('click', () => fetchAndInspect('/api/zona-waktu'));
 
   // 3. Provinsi Change Event
   selectProvinsi.addEventListener('change', async () => {
@@ -105,6 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
     selectKecamatan.disabled = true;
     selectDesa.innerHTML = '<option value="">-- Pilih Desa / Kelurahan --</option>';
     selectDesa.disabled = true;
+    provinsiInfoBadge.classList.add('hidden');
     desaInfoBadge.classList.add('hidden');
     subLevelsWrapper.classList.add('hidden');
 
@@ -112,6 +144,15 @@ document.addEventListener('DOMContentLoaded', () => {
       fetchAndInspect('/api/provinsi?limit=100');
       selectKabupaten.innerHTML = '<option value="">-- Pilih Kabupaten / Kota --</option>';
       return;
+    }
+
+    const provObj = provinsiCache.find(p => p.kode === provKode);
+    if (provObj) {
+      provDetailTitle.textContent = `${provObj.nama} (${provObj.kode})`;
+      provZonaBadge.textContent = provObj.zona_waktu || 'WIB';
+      provPulauBadge.textContent = provObj.pulau || 'Indonesia';
+      provDetailSub.textContent = `Ibukota: ${provObj.ibukota || '-'} • Koordinat: ${provObj.latitude || '-'}, ${provObj.longitude || '-'}`;
+      provinsiInfoBadge.classList.remove('hidden');
     }
 
     const endpoint = `/api/provinsi/${provKode}/kabupaten`;
@@ -122,7 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
       json.data.forEach(k => {
         const opt = document.createElement('option');
         opt.value = k.kode;
-        opt.textContent = `${k.kode} - ${k.nama}`;
+        const ibukotaText = k.ibukota ? ` [Ibukota: ${k.ibukota}]` : '';
+        opt.textContent = `${k.kode} - ${k.nama}${ibukotaText}`;
         selectKabupaten.appendChild(opt);
       });
       selectKabupaten.disabled = false;
@@ -204,7 +246,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const d = json.data;
       currentDesaName.textContent = d.nama;
 
-      // Update Desa summary info card
       desaDetailTitle.textContent = `${d.tipe} ${d.nama} (${d.kode})`;
       desaPostalBadge.textContent = d.kode_pos ? `📮 Kode Pos: ${d.kode_pos}` : '📮 Kode Pos: -';
       desaDetailSub.textContent = `Kec. ${d.kecamatan_nama}, ${d.kabupaten_kota_nama}, ${d.provinsi_nama}`;
@@ -318,7 +359,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const level = searchLevelFilter.value;
     
-    // If searching specifically for 5-digit kodepos
     if (level === 'kodepos' || (/^\d{5}$/.test(q) && level === 'all')) {
       const endpoint = `/api/kodepos/${encodeURIComponent(q)}`;
       searchResultsContainer.classList.remove('hidden');
@@ -424,7 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') performSearch();
   });
 
-  // 9. Quick Add Actions (Dusun / RW / RT)
+  // 9. Quick Add Actions
   document.getElementById('btn-add-dusun').addEventListener('click', async () => {
     const desaKode = selectDesa.value;
     if (!desaKode) return alert('Pilih Desa/Kelurahan terlebih dahulu!');

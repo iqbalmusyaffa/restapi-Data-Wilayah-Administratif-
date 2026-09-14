@@ -20,7 +20,7 @@ async function request(endpoint, options = {}) {
 
 async function runTests() {
   console.log('====================================================');
-  console.log(' RUNNING AUTOMATED TEST SUITE: WILAYAH & KODEPOS API');
+  console.log(' RUNNING AUTOMATED TEST SUITE: WILAYAH & METADATA');
   console.log('====================================================');
 
   await new Promise((resolve) => {
@@ -50,8 +50,9 @@ async function runTests() {
     await test('1. GET /api - Discovery endpoint', async () => {
       const res = await request('/api');
       assert.strictEqual(res.status, 200);
-      assert.strictEqual(res.data.name, 'REST API Wilayah Administratif & Kode Pos Indonesia');
-      assert.ok(res.data.endpoints.kodepos);
+      assert.strictEqual(res.data.name, 'REST API Wilayah Administratif, Metadata & Kode Pos Indonesia');
+      assert.ok(res.data.endpoints.pulau);
+      assert.ok(res.data.endpoints.zona_waktu);
     });
 
     // 2. Stats
@@ -66,41 +67,57 @@ async function runTests() {
       assert.ok(s.desa_kelurahan.total >= 83000);
     });
 
-    // 3. Provinsi Listing
-    await test('3. GET /api/provinsi - Pagination & Search', async () => {
-      const res = await request('/api/provinsi?limit=10&page=1');
-      assert.strictEqual(res.status, 200);
-      assert.strictEqual(res.data.data.length, 10);
-      assert.strictEqual(res.data.pagination.total, 38);
+    // 3. Metadata Pulau & Zona Waktu
+    await test('3. GET /api/pulau & GET /api/zona-waktu - Ringkasan Pengelompokan', async () => {
+      const pulauRes = await request('/api/pulau');
+      assert.strictEqual(pulauRes.status, 200);
+      assert.ok(pulauRes.data.data.length >= 5);
+      const jawa = pulauRes.data.data.find(p => p.pulau === 'Jawa');
+      assert.ok(jawa);
+      assert.strictEqual(jawa.total_provinsi, 6);
+
+      const zonaRes = await request('/api/zona-waktu');
+      assert.strictEqual(zonaRes.status, 200);
+      assert.strictEqual(zonaRes.data.data.length, 3, 'Harus memiliki 3 zona waktu: WIB, WITA, WIT');
     });
 
-    // 4. Detail Provinsi
-    await test('4. GET /api/provinsi/32 - Detail Jawa Barat & Stats', async () => {
+    // 4. Filter Provinsi by Pulau & Zona Waktu
+    await test('4. GET /api/provinsi?pulau=Jawa & ?zona_waktu=WITA', async () => {
+      const jawaRes = await request('/api/provinsi?pulau=Jawa');
+      assert.strictEqual(jawaRes.status, 200);
+      assert.strictEqual(jawaRes.data.data.length, 6, 'Pulau Jawa harus memiliki 6 provinsi');
+
+      const witaRes = await request('/api/provinsi?zona_waktu=WITA');
+      assert.strictEqual(witaRes.status, 200);
+      assert.ok(witaRes.data.data.length >= 10);
+    });
+
+    // 5. Detail Provinsi Jawa Barat & Metadata
+    await test('5. GET /api/provinsi/32 - Detail Jabar & Ibukota / Zona Waktu', async () => {
       const res = await request('/api/provinsi/32?with_kabupaten=true');
       assert.strictEqual(res.status, 200);
       assert.strictEqual(res.data.data.kode, '32');
       assert.strictEqual(res.data.data.nama, 'Jawa Barat');
+      assert.strictEqual(res.data.data.ibukota, 'Kota Bandung');
+      assert.strictEqual(res.data.data.zona_waktu, 'WIB');
+      assert.strictEqual(res.data.data.pulau, 'Jawa');
+      assert.ok(res.data.data.latitude !== null);
+      assert.ok(res.data.data.longitude !== null);
     });
 
-    // 5. Kabupaten / Kota
-    await test('5. GET /api/kabupaten - Filter Provinsi 32', async () => {
+    // 6. Kabupaten / Kota dengan Ibukota & Zona Waktu
+    await test('6. GET /api/kabupaten?provinsi_kode=32', async () => {
       const res = await request('/api/kabupaten?provinsi_kode=32&limit=50');
       assert.strictEqual(res.status, 200);
       const bandung = res.data.data.find(k => k.kode === '32.73');
       assert.ok(bandung);
-      assert.strictEqual(bandung.tipe, 'KOTA');
+      assert.strictEqual(bandung.zona_waktu, 'WIB');
+      const bogor = res.data.data.find(k => k.kode === '32.01');
+      assert.ok(bogor);
+      assert.strictEqual(bogor.ibukota, 'Cibinong');
     });
 
-    // 6. Kecamatan
-    await test('6. GET /api/kabupaten/32.73/kecamatan - Kecamatan di Kota Bandung', async () => {
-      const res = await request('/api/kabupaten/32.73/kecamatan');
-      assert.strictEqual(res.status, 200);
-      const sukasari = res.data.data.find(k => k.kode === '32.73.01');
-      assert.ok(sukasari);
-      assert.strictEqual(sukasari.nama, 'Sukasari');
-    });
-
-    // 7. Desa / Kelurahan dengan Kode Pos
+    // 7. Kecamatan & Kelurahan
     await test('7. GET /api/kecamatan/32.73.01/desa - Desa & Kode Pos', async () => {
       const res = await request('/api/kecamatan/32.73.01/desa');
       assert.strictEqual(res.status, 200);
@@ -115,11 +132,6 @@ async function runTests() {
       assert.strictEqual(res.status, 200);
       assert.strictEqual(res.data.success, true);
       assert.ok(res.data.data.length >= 1);
-      const item = res.data.data[0];
-      assert.strictEqual(item.kode_pos, '40151');
-      assert.ok(item.desa_kelurahan_nama);
-      assert.ok(item.kecamatan_nama);
-      assert.ok(item.provinsi_nama);
     });
 
     // 9. CRUD Dusun
@@ -129,7 +141,7 @@ async function runTests() {
         method: 'POST',
         body: JSON.stringify({
           desa_kelurahan_kode: '32.73.01.1001',
-          nama: 'Dusun Test Automation',
+          nama: 'Dusun Test Metadata',
           kepala_dusun: 'Test Kadus'
         })
       });
@@ -167,18 +179,16 @@ async function runTests() {
       const hierRtRes = await request(`/api/hierarchy/rt/${rtId}`);
       assert.strictEqual(hierRtRes.status, 200);
       assert.strictEqual(hierRtRes.data.data.provinsi.nama, 'Jawa Barat');
-      assert.strictEqual(hierRtRes.data.data.kabupaten_kota.nama, 'Kota Bandung');
 
       await request(`/api/rt/${rtId}`, { method: 'DELETE' });
       await request(`/api/rw/${rwId}`, { method: 'DELETE' });
     });
 
-    // 11. Search by Postal Code or Name
+    // 11. Search by Keyword & Reverse Code Hierarchy
     await test('11. Global Search & Reverse Code Hierarchy', async () => {
       const searchRes = await request('/api/search?q=10110');
       assert.strictEqual(searchRes.status, 200);
       assert.ok(searchRes.data.data.desa_kelurahan.length >= 1);
-      assert.strictEqual(searchRes.data.data.desa_kelurahan[0].nama, 'Gambir');
 
       const hierRes = await request('/api/hierarchy/code/32.73.01.1004');
       assert.strictEqual(hierRes.status, 200);

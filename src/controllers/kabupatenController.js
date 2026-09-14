@@ -5,9 +5,9 @@ class KabupatenController {
   // GET /api/kabupaten
   getAll(req, res) {
     try {
-      const { provinsi_kode, tipe, q, page = 1, limit = 50, sort = 'kode', order = 'ASC' } = req.query;
+      const { provinsi_kode, tipe, zona_waktu, q, page = 1, limit = 50, sort = 'kode', order = 'ASC' } = req.query;
       const offset = (Number(page) - 1) * Number(limit);
-      const sortColumn = ['kode', 'nama', 'tipe'].includes(sort.toLowerCase()) ? `kk.${sort}` : 'kk.kode';
+      const sortColumn = ['kode', 'nama', 'tipe', 'ibukota', 'zona_waktu'].includes(sort.toLowerCase()) ? `kk.${sort}` : 'kk.kode';
       const sortOrder = order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
       let countSql = `
@@ -17,7 +17,7 @@ class KabupatenController {
         WHERE 1=1
       `;
       let dataSql = `
-        SELECT kk.kode, kk.provinsi_kode, p.nama AS provinsi_nama, kk.tipe, kk.nama
+        SELECT kk.kode, kk.provinsi_kode, p.nama AS provinsi_nama, p.pulau, kk.tipe, kk.nama, kk.ibukota, kk.zona_waktu, kk.latitude, kk.longitude
         FROM kabupaten_kota kk
         JOIN provinsi p ON kk.provinsi_kode = p.kode
         WHERE 1=1
@@ -36,10 +36,16 @@ class KabupatenController {
         params.push(tipe.toUpperCase());
       }
 
+      if (zona_waktu) {
+        countSql += ' AND UPPER(kk.zona_waktu) = ?';
+        dataSql += ' AND UPPER(kk.zona_waktu) = ?';
+        params.push(zona_waktu.toUpperCase());
+      }
+
       if (q) {
-        countSql += ' AND (kk.nama LIKE ? OR kk.kode LIKE ? OR p.nama LIKE ?)';
-        dataSql += ' AND (kk.nama LIKE ? OR kk.kode LIKE ? OR p.nama LIKE ?)';
-        params.push(`%${q}%`, `%${q}%`, `%${q}%`);
+        countSql += ' AND (kk.nama LIKE ? OR kk.kode LIKE ? OR kk.ibukota LIKE ? OR p.nama LIKE ?)';
+        dataSql += ' AND (kk.nama LIKE ? OR kk.kode LIKE ? OR kk.ibukota LIKE ? OR p.nama LIKE ?)';
+        params.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
       }
 
       dataSql += ` ORDER BY ${sortColumn} ${sortOrder} LIMIT ? OFFSET ?`;
@@ -62,7 +68,7 @@ class KabupatenController {
       const { with_kecamatan } = req.query;
 
       const kabupaten = db.prepare(`
-        SELECT kk.kode, kk.provinsi_kode, p.nama AS provinsi_nama, kk.tipe, kk.nama, kk.created_at, kk.updated_at
+        SELECT kk.kode, kk.provinsi_kode, p.nama AS provinsi_nama, p.pulau, kk.tipe, kk.nama, kk.ibukota, kk.zona_waktu, kk.latitude, kk.longitude, kk.created_at, kk.updated_at
         FROM kabupaten_kota kk
         JOIN provinsi p ON kk.provinsi_kode = p.kode
         WHERE kk.kode = ?
@@ -108,7 +114,7 @@ class KabupatenController {
       const { q } = req.query;
 
       const kabupaten = db.prepare(`
-        SELECT kk.kode, kk.nama, kk.tipe, p.nama AS provinsi_nama
+        SELECT kk.kode, kk.nama, kk.tipe, kk.ibukota, kk.zona_waktu, p.nama AS provinsi_nama
         FROM kabupaten_kota kk
         JOIN provinsi p ON kk.provinsi_kode = p.kode
         WHERE kk.kode = ?
@@ -141,7 +147,7 @@ class KabupatenController {
   // POST /api/kabupaten
   create(req, res) {
     try {
-      const { kode, provinsi_kode, nama, tipe = 'KABUPATEN' } = req.body;
+      const { kode, provinsi_kode, nama, tipe = 'KABUPATEN', ibukota, zona_waktu = 'WIB', latitude, longitude } = req.body;
       if (!kode || !provinsi_kode || !nama) {
         return errorResponse(res, 'Field "kode", "provinsi_kode", dan "nama" wajib diisi', 400);
       }
@@ -157,11 +163,18 @@ class KabupatenController {
       }
 
       const formattedTipe = tipe.toUpperCase() === 'KOTA' ? 'KOTA' : 'KABUPATEN';
-      db.prepare('INSERT INTO kabupaten_kota (kode, provinsi_kode, tipe, nama) VALUES (?, ?, ?, ?)').run(
+      db.prepare(`
+        INSERT INTO kabupaten_kota (kode, provinsi_kode, tipe, nama, ibukota, zona_waktu, latitude, longitude) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
         kode,
         provinsi_kode,
         formattedTipe,
-        nama
+        nama,
+        ibukota || null,
+        zona_waktu || 'WIB',
+        latitude || null,
+        longitude || null
       );
 
       const created = db.prepare('SELECT * FROM kabupaten_kota WHERE kode = ?').get(kode);
@@ -175,7 +188,7 @@ class KabupatenController {
   update(req, res) {
     try {
       const { kode } = req.params;
-      const { nama, tipe, provinsi_kode } = req.body;
+      const { nama, tipe, provinsi_kode, ibukota, zona_waktu, latitude, longitude } = req.body;
 
       const existing = db.prepare('SELECT * FROM kabupaten_kota WHERE kode = ?').get(kode);
       if (!existing) {
@@ -185,12 +198,16 @@ class KabupatenController {
       const newNama = nama || existing.nama;
       const newTipe = tipe ? (tipe.toUpperCase() === 'KOTA' ? 'KOTA' : 'KABUPATEN') : existing.tipe;
       const newProvKode = provinsi_kode || existing.provinsi_kode;
+      const newIbukota = ibukota !== undefined ? ibukota : existing.ibukota;
+      const newZona = zona_waktu !== undefined ? zona_waktu : existing.zona_waktu;
+      const newLat = latitude !== undefined ? latitude : existing.latitude;
+      const newLng = longitude !== undefined ? longitude : existing.longitude;
 
       db.prepare(`
         UPDATE kabupaten_kota 
-        SET nama = ?, tipe = ?, provinsi_kode = ?, updated_at = CURRENT_TIMESTAMP 
+        SET nama = ?, tipe = ?, provinsi_kode = ?, ibukota = ?, zona_waktu = ?, latitude = ?, longitude = ?, updated_at = CURRENT_TIMESTAMP 
         WHERE kode = ?
-      `).run(newNama, newTipe, newProvKode, kode);
+      `).run(newNama, newTipe, newProvKode, newIbukota, newZona, newLat, newLng, kode);
 
       const updated = db.prepare('SELECT * FROM kabupaten_kota WHERE kode = ?').get(kode);
       return successResponse(res, updated, 'Data kabupaten/kota berhasil diperbarui');

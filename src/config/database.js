@@ -19,20 +19,29 @@ db.exec('PRAGMA foreign_keys = ON;');
 
 function initSchema() {
   db.exec(`
-    -- 1. PROVINSI
+    -- 1. PROVINSI (Metadata Lengkap: Ibukota, Zona Waktu, Pulau, GPS)
     CREATE TABLE IF NOT EXISTS provinsi (
       kode TEXT PRIMARY KEY,
       nama TEXT NOT NULL,
+      ibukota TEXT,
+      zona_waktu TEXT DEFAULT 'WIB',
+      pulau TEXT,
+      latitude REAL,
+      longitude REAL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- 2. KABUPATEN / KOTA
+    -- 2. KABUPATEN / KOTA (Metadata: Ibukota, Zona Waktu, GPS)
     CREATE TABLE IF NOT EXISTS kabupaten_kota (
       kode TEXT PRIMARY KEY,
       provinsi_kode TEXT NOT NULL,
       tipe TEXT NOT NULL DEFAULT 'KABUPATEN',
       nama TEXT NOT NULL,
+      ibukota TEXT,
+      zona_waktu TEXT DEFAULT 'WIB',
+      latitude REAL,
+      longitude REAL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (provinsi_kode) REFERENCES provinsi(kode) ON DELETE CASCADE
@@ -48,7 +57,7 @@ function initSchema() {
       FOREIGN KEY (kabupaten_kota_kode) REFERENCES kabupaten_kota(kode) ON DELETE CASCADE
     );
 
-    -- 4. DESA / KELURAHAN
+    -- 4. DESA / KELURAHAN (dengan Kode Pos)
     CREATE TABLE IF NOT EXISTS desa_kelurahan (
       kode TEXT PRIMARY KEY,
       kecamatan_kode TEXT NOT NULL,
@@ -97,12 +106,35 @@ function initSchema() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (rw_id) REFERENCES rw(id) ON DELETE CASCADE
     );
+  `);
 
-    -- INDEKS PERFORMA QUERY & PENCARIAN
+  // Auto-migration check: ensure columns exist if tables already existed
+  try {
+    const provColumns = db.prepare('PRAGMA table_info(provinsi)').all().map(c => c.name);
+    if (!provColumns.includes('pulau')) db.exec('ALTER TABLE provinsi ADD COLUMN pulau TEXT;');
+    if (!provColumns.includes('ibukota')) db.exec('ALTER TABLE provinsi ADD COLUMN ibukota TEXT;');
+    if (!provColumns.includes('zona_waktu')) db.exec("ALTER TABLE provinsi ADD COLUMN zona_waktu TEXT DEFAULT 'WIB';");
+    if (!provColumns.includes('latitude')) db.exec('ALTER TABLE provinsi ADD COLUMN latitude REAL;');
+    if (!provColumns.includes('longitude')) db.exec('ALTER TABLE provinsi ADD COLUMN longitude REAL;');
+
+    const kabColumns = db.prepare('PRAGMA table_info(kabupaten_kota)').all().map(c => c.name);
+    if (!kabColumns.includes('ibukota')) db.exec('ALTER TABLE kabupaten_kota ADD COLUMN ibukota TEXT;');
+    if (!kabColumns.includes('zona_waktu')) db.exec("ALTER TABLE kabupaten_kota ADD COLUMN zona_waktu TEXT DEFAULT 'WIB';");
+    if (!kabColumns.includes('latitude')) db.exec('ALTER TABLE kabupaten_kota ADD COLUMN latitude REAL;');
+    if (!kabColumns.includes('longitude')) db.exec('ALTER TABLE kabupaten_kota ADD COLUMN longitude REAL;');
+  } catch (err) {
+    console.warn('[DB] Auto-migration check:', err.message);
+  }
+
+  // Create indexes
+  db.exec(`
     CREATE INDEX IF NOT EXISTS idx_provinsi_nama ON provinsi(nama);
+    CREATE INDEX IF NOT EXISTS idx_provinsi_pulau ON provinsi(pulau);
+    CREATE INDEX IF NOT EXISTS idx_provinsi_zona_waktu ON provinsi(zona_waktu);
     CREATE INDEX IF NOT EXISTS idx_kabupaten_provinsi ON kabupaten_kota(provinsi_kode);
     CREATE INDEX IF NOT EXISTS idx_kabupaten_nama ON kabupaten_kota(nama);
     CREATE INDEX IF NOT EXISTS idx_kabupaten_tipe ON kabupaten_kota(tipe);
+    CREATE INDEX IF NOT EXISTS idx_kabupaten_zona_waktu ON kabupaten_kota(zona_waktu);
     CREATE INDEX IF NOT EXISTS idx_kecamatan_kabupaten ON kecamatan(kabupaten_kota_kode);
     CREATE INDEX IF NOT EXISTS idx_kecamatan_nama ON kecamatan(nama);
     CREATE INDEX IF NOT EXISTS idx_desa_kecamatan ON desa_kelurahan(kecamatan_kode);

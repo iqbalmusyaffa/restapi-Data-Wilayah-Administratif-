@@ -2,8 +2,14 @@ const express = require('express');
 const router = express.Router();
 const provinsiController = require('../controllers/provinsiController');
 
-// GET /api/provinsi - List & search provinsi
+// GET /api/provinsi - List & search provinsi (filter: pulau, zona_waktu, q, paging)
 router.get('/', (req, res) => provinsiController.getAll(req, res));
+
+// GET /api/provinsi/pulau - Ringkasan per pulau besar
+router.get('/pulau', (req, res) => provinsiController.getPulau(req, res));
+
+// GET /api/provinsi/zona-waktu - Ringkasan per zona waktu
+router.get('/zona-waktu', (req, res) => provinsiController.getZonaWaktu(req, res));
 
 // POST /api/provinsi - Tambah provinsi baru
 router.post('/', (req, res) => provinsiController.create(req, res));

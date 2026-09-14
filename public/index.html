@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Indonesia Wilayah & Kode Pos REST API Explorer</title>
+  <title>Indonesia Wilayah, Metadata & Kode Pos REST API Explorer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -16,8 +16,8 @@
       <div class="brand">
         <span class="flag-icon">🇮🇩</span>
         <div>
-          <h1>Wilayah & Kode Pos API Indonesia</h1>
-          <p class="subtitle">Provinsi • Kab/Kota • Kecamatan • Desa • Dusun • RW • RT • Kode Pos</p>
+          <h1>Wilayah, Metadata & Kode Pos Indonesia</h1>
+          <p class="subtitle">Provinsi • Kab/Kota • Kecamatan • Desa • Dusun • RW • RT • Kode Pos • Pulau • Zona Waktu</p>
         </div>
       </div>
       <div class="nav-actions">
@@ -67,7 +67,7 @@
       <div class="stat-card">
         <div class="stat-icon yellow">📮</div>
         <div class="stat-info">
-          <span class="stat-label">Kode Pos Terpetakan</span>
+          <span class="stat-label">Kode Pos Resmi</span>
           <h3 id="stat-kodepos">83.762</h3>
         </div>
       </div>
@@ -96,12 +96,12 @@
 
     <!-- Global Search Bar -->
     <section class="search-card">
-      <h2>🔍 Pencarian Cepat Wilayah & Kode Pos</h2>
-      <p class="search-desc">Ketik nama wilayah (contoh: <em>Bandung</em>, <em>Sarijadi</em>, <em>Gambir</em>), kode Kemendagri, atau 5 digit kode pos (contoh: <em>40152</em>, <em>10110</em>):</p>
+      <h2>🔍 Pencarian Wilayah, Metadata & Kode Pos</h2>
+      <p class="search-desc">Cari berdasarkan nama wilayah (contoh: <em>Bandung</em>, <em>Sarijadi</em>), Ibukota, kode Kemendagri, atau 5 digit kode pos (contoh: <em>40151</em>, <em>10110</em>):</p>
       <div class="search-box">
-        <input type="text" id="global-search-input" placeholder="Cari nama wilayah atau 5 digit kode pos..." autocomplete="off" />
+        <input type="text" id="global-search-input" placeholder="Ketik kata kunci pencarian..." autocomplete="off" />
         <select id="search-level-filter">
-          <option value="all">Semua Tingkat & Kode Pos</option>
+          <option value="all">Semua Kategori</option>
           <option value="kodepos">📮 Kode Pos Saja</option>
           <option value="provinsi">Provinsi</option>
           <option value="kabupaten">Kabupaten / Kota</option>
@@ -120,8 +120,36 @@
     <section class="explorer-grid">
       <div class="panel explorer-panel">
         <div class="panel-header">
-          <h2>🧭 Penjelajah Hierarki Wilayah</h2>
-          <span class="badge">Cascading Explorer</span>
+          <h2>🧭 Penjelajah Hierarki & Metadata</h2>
+          <div class="meta-pills-header">
+            <button class="btn btn-sm btn-outline" id="btn-show-pulau">Pulau</button>
+            <button class="btn btn-sm btn-outline" id="btn-show-zona">Zona Waktu</button>
+          </div>
+        </div>
+
+        <div class="filter-row" style="display: flex; gap: 0.75rem; margin-bottom: 1rem;">
+          <div style="flex: 1;">
+            <label style="font-size:0.75rem; color:#9ca3af; display:block; margin-bottom:0.25rem;">Filter Pulau:</label>
+            <select id="filter-pulau" class="form-control">
+              <option value="">Semua Pulau</option>
+              <option value="Sumatera">Sumatera</option>
+              <option value="Jawa">Jawa</option>
+              <option value="Kalimantan">Kalimantan</option>
+              <option value="Sulawesi">Sulawesi</option>
+              <option value="Bali & Nusa Tenggara">Bali & Nusa Tenggara</option>
+              <option value="Maluku">Maluku</option>
+              <option value="Papua">Papua</option>
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <label style="font-size:0.75rem; color:#9ca3af; display:block; margin-bottom:0.25rem;">Filter Zona Waktu:</label>
+            <select id="filter-zona" class="form-control">
+              <option value="">Semua Zona Waktu</option>
+              <option value="WIB">WIB (UTC+7)</option>
+              <option value="WITA">WITA (UTC+8)</option>
+              <option value="WIT">WIT (UTC+9)</option>
+            </select>
+          </div>
         </div>
 
         <div class="form-group">
@@ -129,6 +157,18 @@
           <select id="select-provinsi" class="form-control">
             <option value="">-- Pilih Provinsi --</option>
           </select>
+        </div>
+
+        <!-- Province Metadata Card -->
+        <div id="provinsi-info-badge" class="desa-info-card hidden">
+          <div class="desa-info-header">
+            <h4 id="prov-detail-title">Provinsi</h4>
+            <div style="display:flex; gap:0.4rem;">
+              <span class="postal-badge" id="prov-zona-badge" style="background:#3b82f6; color:white;">WIB</span>
+              <span class="postal-badge" id="prov-pulau-badge" style="background:#10b981; color:white;">Jawa</span>
+            </div>
+          </div>
+          <p id="prov-detail-sub" class="text-muted">Ibukota: Kota Bandung • Koordinat: -6.9174, 107.6191</p>
         </div>
 
         <div class="form-group">
@@ -223,7 +263,7 @@
 
     <!-- Quick Endpoints Reference Table -->
     <section class="endpoints-reference panel">
-      <h2>📚 Panduan Cepat Endpoint REST API (Termasuk Kode Pos)</h2>
+      <h2>📚 Panduan Cepat Endpoint REST API (Wilayah, Metadata & Kode Pos)</h2>
       <div class="table-responsive">
         <table class="api-table">
           <thead>
@@ -237,26 +277,38 @@
           <tbody>
             <tr>
               <td><span class="method-badge get">GET</span></td>
-              <td><code>/api/kodepos/40152</code></td>
+              <td><code>/api/pulau</code></td>
+              <td>Pengelompokan 38 provinsi berdasarkan Pulau Besar</td>
+              <td><a href="/api/pulau" target="_blank">/api/pulau</a></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/zona-waktu</code></td>
+              <td>Pengelompokan provinsi berdasarkan Zona Waktu (WIB, WITA, WIT)</td>
+              <td><a href="/api/zona-waktu" target="_blank">/api/zona-waktu</a></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/provinsi?pulau=Jawa</code></td>
+              <td>Filter daftar provinsi di Pulau Jawa</td>
+              <td><a href="/api/provinsi?pulau=Jawa" target="_blank">/api/provinsi?pulau=Jawa</a></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/provinsi?zona_waktu=WITA</code></td>
+              <td>Filter daftar provinsi di zona waktu WITA</td>
+              <td><a href="/api/provinsi?zona_waktu=WITA" target="_blank">/api/provinsi?zona_waktu=WITA</a></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/kodepos/40151</code></td>
               <td>Cari wilayah dari 5 digit Kode Pos (Sarijadi, Sukasari)</td>
-              <td><a href="/api/kodepos/40152" target="_blank">/api/kodepos/40152</a></td>
-            </tr>
-            <tr>
-              <td><span class="method-badge get">GET</span></td>
-              <td><code>/api/kodepos/10110</code></td>
-              <td>Cari wilayah dari Kode Pos 10110 (Gambir, Jakarta Pusat)</td>
-              <td><a href="/api/kodepos/10110" target="_blank">/api/kodepos/10110</a></td>
-            </tr>
-            <tr>
-              <td><span class="method-badge get">GET</span></td>
-              <td><code>/api/provinsi</code></td>
-              <td>Daftar 38 provinsi di Indonesia (filter, sort, paging)</td>
-              <td><a href="/api/provinsi?page=1&limit=10" target="_blank">/api/provinsi?page=1&limit=10</a></td>
+              <td><a href="/api/kodepos/40151" target="_blank">/api/kodepos/40151</a></td>
             </tr>
             <tr>
               <td><span class="method-badge get">GET</span></td>
               <td><code>/api/kabupaten?provinsi_kode=32</code></td>
-              <td>Daftar kabupaten/kota di Jawa Barat (kode 32)</td>
+              <td>Daftar kabupaten/kota di Jawa Barat (dengan Ibukota & Zona Waktu)</td>
               <td><a href="/api/kabupaten?provinsi_kode=32" target="_blank">/api/kabupaten?provinsi_kode=32</a></td>
             </tr>
             <tr>
@@ -273,27 +325,9 @@
             </tr>
             <tr>
               <td><span class="method-badge get">GET</span></td>
-              <td><code>/api/dusun?desa_kelurahan_kode=32.73.01.1004</code></td>
-              <td>Daftar dusun/lingkungan di Kelurahan Sarijadi</td>
-              <td><a href="/api/dusun?desa_kelurahan_kode=32.73.01.1004" target="_blank">/api/dusun?desa_kelurahan_kode=32.73.01.1004</a></td>
-            </tr>
-            <tr>
-              <td><span class="method-badge get">GET</span></td>
-              <td><code>/api/rw?desa_kelurahan_kode=32.73.01.1004</code></td>
-              <td>Daftar RW di Kelurahan Sarijadi</td>
-              <td><a href="/api/rw?desa_kelurahan_kode=32.73.01.1004" target="_blank">/api/rw?desa_kelurahan_kode=32.73.01.1004</a></td>
-            </tr>
-            <tr>
-              <td><span class="method-badge get">GET</span></td>
-              <td><code>/api/rt?rw_id=1</code></td>
-              <td>Daftar RT di RW ID 1</td>
-              <td><a href="/api/rt?rw_id=1" target="_blank">/api/rt?rw_id=1</a></td>
-            </tr>
-            <tr>
-              <td><span class="method-badge get">GET</span></td>
-              <td><code>/api/search?q=40152</code></td>
-              <td>Pencarian multi-level berdasarkan kode pos atau nama tempat</td>
-              <td><a href="/api/search?q=40152" target="_blank">/api/search?q=40152</a></td>
+              <td><code>/api/search?q=Bandung</code></td>
+              <td>Pencarian multi-level berdasarkan nama tempat, ibukota, atau kode pos</td>
+              <td><a href="/api/search?q=Bandung" target="_blank">/api/search?q=Bandung</a></td>
             </tr>
             <tr>
               <td><span class="method-badge get">GET</span></td>
@@ -309,11 +343,12 @@
 
   <footer class="footer">
     <div class="container footer-content">
-      <p>🇮🇩 Data Resmi Wilayah & Kode Pos Indonesia Kepmendagri • Node.js REST API</p>
+      <p>🇮🇩 Data Resmi Wilayah, Metadata & Kode Pos Indonesia Kepmendagri • Node.js REST API</p>
       <p class="footer-links">
         <a href="/api/docs" target="_blank">Swagger Documentation</a> • 
         <a href="/api/stats" target="_blank">Stats Endpoint</a> • 
-        <a href="/api/kodepos/40152" target="_blank">Sample Kode Pos</a> •
+        <a href="/api/pulau" target="_blank">Pulau Endpoint</a> •
+        <a href="/api/zona-waktu" target="_blank">Zona Waktu Endpoint</a> •
         <a href="/api" target="_blank">API Root</a>
       </p>
     </div>

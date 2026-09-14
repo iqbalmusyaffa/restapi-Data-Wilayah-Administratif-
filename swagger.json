@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "REST API Wilayah Administratif & Kode Pos Indonesia",
+    "title": "REST API Wilayah Administratif, Metadata & Kode Pos Indonesia",
     "version": "1.0.0",
-    "description": "API Lengkap 7 Tingkat Wilayah Administratif Indonesia (Provinsi, Kabupaten/Kota, Kecamatan, Desa/Kelurahan, Dusun, RW, dan RT) + Data Kode Pos Resmi berdasarkan Kepmendagri terbaru."
+    "description": "API Lengkap 7 Tingkat Wilayah Administratif Indonesia (Provinsi, Kabupaten/Kota, Kecamatan, Desa/Kelurahan, Dusun, RW, dan RT) + Data Kode Pos Resmi + Metadata (Ibukota, Zona Waktu WIB/WITA/WIT, Pulau, Koordinat GPS)."
   },
   "servers": [
     {
@@ -13,6 +13,7 @@
   ],
   "tags": [
     { "name": "Statistik & Umum", "description": "Informasi ringkasan dan statistik wilayah" },
+    { "name": "Metadata & Pengelompokan", "description": "Pengelompokan wilayah berdasarkan Pulau Besar & Zona Waktu (WIB, WITA, WIT)" },
     { "name": "Pencarian & Hierarki", "description": "Global search dan reverse breadcrumb hierarki wilayah" },
     { "name": "Kode Pos", "description": "Pencarian dan penelusuran wilayah berdasarkan Kode Pos (5 Digit)" },
     { "name": "Provinsi", "description": "Data Wilayah Tingkat I (38 Provinsi)" },
@@ -33,12 +34,30 @@
         }
       }
     },
+    "/api/pulau": {
+      "get": {
+        "tags": ["Metadata & Pengelompokan"],
+        "summary": "Pengelompokan provinsi berdasarkan pulau-pulau besar di Indonesia",
+        "responses": {
+          "200": { "description": "Daftar pulau dan provinsinya berhasil diambil" }
+        }
+      }
+    },
+    "/api/zona-waktu": {
+      "get": {
+        "tags": ["Metadata & Pengelompokan"],
+        "summary": "Pengelompokan provinsi berdasarkan zona waktu Indonesia (WIB, WITA, WIT)",
+        "responses": {
+          "200": { "description": "Daftar zona waktu dan provinsinya berhasil diambil" }
+        }
+      }
+    },
     "/api/kodepos/{kodepos}": {
       "get": {
         "tags": ["Kode Pos"],
         "summary": "Mencari desa/kelurahan, kecamatan, kabupaten, dan provinsi berdasarkan 5-digit Kode Pos",
         "parameters": [
-          { "name": "kodepos", "in": "path", "required": true, "schema": { "type": "string" }, "example": "40152", "description": "5-digit Kode Pos Indonesia" }
+          { "name": "kodepos", "in": "path", "required": true, "schema": { "type": "string" }, "example": "40151", "description": "5-digit Kode Pos Indonesia" }
         ],
         "responses": {
           "200": { "description": "Daftar wilayah dengan kode pos tersebut berhasil dikembalikan" }
@@ -66,7 +85,7 @@
         "tags": ["Pencarian & Hierarki"],
         "summary": "Pencarian nama, kode wilayah, atau kode pos secara global",
         "parameters": [
-          { "name": "q", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Kata kunci pencarian nama, kode, atau kode pos (misal: 'Bandung', 'Sarijadi', '40152')" },
+          { "name": "q", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Kata kunci pencarian nama, kode, atau kode pos (misal: 'Bandung', 'Sarijadi', '40151')" },
           { "name": "level", "in": "query", "required": false, "schema": { "type": "string", "enum": ["all", "provinsi", "kabupaten", "kecamatan", "desa", "dusun", "rw", "rt", "kodepos"] }, "description": "Filter pencarian pada level tertentu" },
           { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "default": 20 }, "description": "Maksimal hasil per kategori (default: 20)" }
         ],
@@ -102,12 +121,14 @@
     "/api/provinsi": {
       "get": {
         "tags": ["Provinsi"],
-        "summary": "Mendapatkan daftar seluruh provinsi di Indonesia (dengan pagination & search)",
+        "summary": "Mendapatkan daftar seluruh 38 provinsi di Indonesia (filter pulau, zona_waktu, paging)",
         "parameters": [
-          { "name": "q", "in": "query", "schema": { "type": "string" }, "description": "Cari nama atau kode provinsi" },
+          { "name": "pulau", "in": "query", "schema": { "type": "string", "enum": ["Sumatera", "Jawa", "Kalimantan", "Sulawesi", "Bali & Nusa Tenggara", "Maluku", "Papua"] }, "description": "Filter berdasarkan Pulau Besar" },
+          { "name": "zona_waktu", "in": "query", "schema": { "type": "string", "enum": ["WIB", "WITA", "WIT"] }, "description": "Filter berdasarkan Zona Waktu" },
+          { "name": "q", "in": "query", "schema": { "type": "string" }, "description": "Cari nama, ibukota, atau kode provinsi" },
           { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
           { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } },
-          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["kode", "nama"], "default": "kode" } },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["kode", "nama", "pulau", "zona_waktu", "ibukota"], "default": "kode" } },
           { "name": "order", "in": "query", "schema": { "type": "string", "enum": ["ASC", "DESC"], "default": "ASC" } }
         ],
         "responses": { "200": { "description": "Daftar provinsi berhasil diambil" } }
@@ -124,7 +145,10 @@
                 "required": ["kode", "nama"],
                 "properties": {
                   "kode": { "type": "string", "example": "99" },
-                  "nama": { "type": "string", "example": "PROVINSI BARU" }
+                  "nama": { "type": "string", "example": "PROVINSI BARU" },
+                  "ibukota": { "type": "string", "example": "KOTA BARU" },
+                  "zona_waktu": { "type": "string", "enum": ["WIB", "WITA", "WIT"], "default": "WIB" },
+                  "pulau": { "type": "string", "example": "Jawa" }
                 }
               }
             }
@@ -136,7 +160,7 @@
     "/api/provinsi/{kode}": {
       "get": {
         "tags": ["Provinsi"],
-        "summary": "Mendapatkan detail provinsi beserta statistik jumlah kabupaten/kecamatan/desa",
+        "summary": "Mendapatkan detail provinsi beserta ibukota, zona waktu, koordinat GPS, dan statistik",
         "parameters": [
           { "name": "kode", "in": "path", "required": true, "schema": { "type": "string" }, "example": "32" },
           { "name": "with_kabupaten", "in": "query", "schema": { "type": "boolean", "default": false } }
@@ -145,7 +169,7 @@
       },
       "put": {
         "tags": ["Provinsi"],
-        "summary": "Memperbarui nama provinsi",
+        "summary": "Memperbarui data provinsi",
         "parameters": [{ "name": "kode", "in": "path", "required": true, "schema": { "type": "string" }, "example": "32" }],
         "requestBody": {
           "required": true,
@@ -153,8 +177,12 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["nama"],
-                "properties": { "nama": { "type": "string", "example": "JAWA BARAT" } }
+                "properties": {
+                  "nama": { "type": "string" },
+                  "ibukota": { "type": "string" },
+                  "zona_waktu": { "type": "string" },
+                  "pulau": { "type": "string" }
+                }
               }
             }
           }
@@ -183,11 +211,12 @@
     "/api/kabupaten": {
       "get": {
         "tags": ["Kabupaten / Kota"],
-        "summary": "Mendapatkan daftar kabupaten/kota (dengan filter provinsi, tipe, search, pagination)",
+        "summary": "Mendapatkan daftar kabupaten/kota (filter provinsi, tipe, zona_waktu, search, pagination)",
         "parameters": [
           { "name": "provinsi_kode", "in": "query", "schema": { "type": "string" }, "description": "Filter berdasarkan kode provinsi (misal: '32')" },
           { "name": "tipe", "in": "query", "schema": { "type": "string", "enum": ["KABUPATEN", "KOTA"] } },
-          { "name": "q", "in": "query", "schema": { "type": "string" }, "description": "Cari nama kabupaten/kota" },
+          { "name": "zona_waktu", "in": "query", "schema": { "type": "string", "enum": ["WIB", "WITA", "WIT"] } },
+          { "name": "q", "in": "query", "schema": { "type": "string" }, "description": "Cari nama atau ibukota kabupaten/kota" },
           { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
           { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } }
         ],
@@ -207,7 +236,9 @@
                   "kode": { "type": "string", "example": "32.99" },
                   "provinsi_kode": { "type": "string", "example": "32" },
                   "tipe": { "type": "string", "enum": ["KABUPATEN", "KOTA"], "default": "KABUPATEN" },
-                  "nama": { "type": "string", "example": "KABUPATEN BARU" }
+                  "nama": { "type": "string", "example": "KABUPATEN BARU" },
+                  "ibukota": { "type": "string", "example": "IBUKOTA BARU" },
+                  "zona_waktu": { "type": "string", "default": "WIB" }
                 }
               }
             }
@@ -219,7 +250,7 @@
     "/api/kabupaten/{kode}": {
       "get": {
         "tags": ["Kabupaten / Kota"],
-        "summary": "Mendapatkan detail kabupaten/kota",
+        "summary": "Mendapatkan detail kabupaten/kota beserta ibukota dan zona waktu",
         "parameters": [
           { "name": "kode", "in": "path", "required": true, "schema": { "type": "string" }, "example": "32.73" },
           { "name": "with_kecamatan", "in": "query", "schema": { "type": "boolean", "default": false } }
@@ -239,7 +270,8 @@
                 "properties": {
                   "nama": { "type": "string", "example": "KOTA BANDUNG" },
                   "tipe": { "type": "string", "enum": ["KABUPATEN", "KOTA"] },
-                  "provinsi_kode": { "type": "string" }
+                  "ibukota": { "type": "string" },
+                  "zona_waktu": { "type": "string" }
                 }
               }
             }
@@ -379,7 +411,7 @@
                   "kecamatan_kode": { "type": "string", "example": "32.73.01" },
                   "tipe": { "type": "string", "enum": ["DESA", "KELURAHAN"], "default": "DESA" },
                   "nama": { "type": "string", "example": "DESA CONTOH" },
-                  "kode_pos": { "type": "string", "example": "40152" }
+                  "kode_pos": { "type": "string", "example": "40151" }
                 }
               }
             }
@@ -413,7 +445,7 @@
                   "nama": { "type": "string" },
                   "tipe": { "type": "string", "enum": ["DESA", "KELURAHAN"] },
                   "kecamatan_kode": { "type": "string" },
-                  "kode_pos": { "type": "string", "example": "40152" }
+                  "kode_pos": { "type": "string", "example": "40151" }
                 }
               }
             }
