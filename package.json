@@ -8,6 +8,9 @@
     "dev": "node --watch server.js",
     "seed": "node src/scripts/seed.js",
     "seed:sample": "node src/scripts/seed-sample.js",
+    "export:supabase": "node src/scripts/export-supabase.js",
+    "seed:supabase": "node src/scripts/seed-supabase.js",
+    "seed:supabase:direct": "node src/scripts/seed-supabase-direct.js",
     "test": "node tests/api.test.js"
   },
   "keywords": [
@@ -29,9 +32,11 @@
   "author": "Antigravity",
   "license": "MIT",
   "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "pg": "^8.23.0",
     "swagger-ui-express": "^5.0.1"
   }
 }

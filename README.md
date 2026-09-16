@@ -5,6 +5,8 @@
 [![Tests: 11 Passing](https://img.shields.io/badge/Tests-11%20Passing-success)](tests/api.test.js)
 [![OpenAPI 3.0](https://img.shields.io/badge/Swagger-OpenAPI%203.0-85EA2D?logo=swagger&logoColor=black)](http://localhost:3000/api/docs)
 [![Database: SQLite](https://img.shields.io/badge/Database-SQLite%20Native-003B57?logo=sqlite&logoColor=white)](https://sqlite.org/)
+[![Database: Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20%2B%20Realtime-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
+[![Hosting: aaPanel Ready](https://img.shields.io/badge/Deploy-aaPanel%20Ready-2E7D32)](README.md#-%EF%B8%8F-panduan-deploy-di-aapanel-nginx--pm2)
 
 REST API mandiri (*self-contained*), berkinerja tinggi, dan lengkap untuk menyajikan serta mengelola seluruh data wilayah administratif di Indonesia dari tingkat provinsi hingga tingkat komunitas terkecil (7 tingkat) **beserta Data Kode Pos Resmi dan Metadata Geografis**:
 
@@ -260,6 +262,82 @@ Aplikasi akan otomatis melakukan *build*, *seeding*, dan aktif di port `3000`.
 
 ---
 
+## ⚡ Integrasi Supabase (PostgreSQL & Realtime)
+
+Project ini memiliki dukungan penuh untuk **[Supabase](https://supabase.com/)** (PostgreSQL + Realtime CDC + Row Level Security).
+
+### 1. Struktur File Supabase
+- 📄 `supabase/schema.sql`: DDL tabel 7 level wilayah, indeks performa, RLS policy publik, dan aktivasi Supabase Realtime publication.
+- 📄 `supabase/seed.sql`: Data batch insert SQL 90.000+ wilayah (5,5 MB).
+- 📁 `supabase/parts/`: File SQL yang telah dipecah kecil-kecil (< 800 KB per file) agar bisa di-copy paste langsung di SQL Editor browser tanpa batasan limit ukuran.
+- 🖥️ `public/realtime-demo.html`: Halaman dashboard live monitor WebSocket Realtime (buka [http://localhost:3000/realtime-demo.html](http://localhost:3000/realtime-demo.html)).
+
+### 2. Cara Setup & Seeding ke Supabase
+
+#### Pilihan A: Seeding Otomatis 1 Perintah via Terminal (~3-10 Detik) — *Direkomendasikan*
+1. Buat project baru di **[database.new](https://database.new)**.
+2. Ambil **Connection string** (Pilih `Session pooler` mode URI di Project Settings -> Database).
+3. Tambahkan ke file `.env`:
+   ```env
+   SUPABASE_DB_URL="postgresql://postgres.xxxx:PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
+   ```
+4. Jalankan perintah:
+   ```bash
+   npm run seed:supabase:direct
+   ```
+   *Skema dan seluruh 90.000+ data wilayah akan otomatis terisi dalam hitungan detik!*
+
+#### Pilihan B: Manual Copy-Paste via Supabase SQL Editor
+1. Jalankan `supabase/schema.sql` di SQL Editor untuk membuat tabel dan mengaktifkan Realtime.
+2. Jalankan file-file di folder `supabase/parts/` secara berurutan:
+   - `01_provinsi_kabupaten.sql`
+   - `02_kecamatan.sql`
+   - `03_desa_part1.sql` s/d `part7.sql`
+   - `04_dusun_rw_rt.sql`
+
+### 3. Contoh Menggunakan Realtime di Frontend (React / Vue / Flutter / Vanilla JS)
+```javascript
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient('https://xyz.supabase.co', 'your-anon-key');
+
+// Dengarkan perubahan data RT / RW secara realtime detik itu juga
+supabase
+  .channel('public:rt')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'rt' }, (payload) => {
+    console.log('Perubahan RT Terdeteksi:', payload);
+    // UI otomatis ter-update tanpa reload halaman!
+  })
+  .subscribe();
+```
+
+---
+
+## 🚀 Panduan Deploy di aaPanel (Nginx + PM2)
+
+Aplikasi ini sangat ringan (**RAM hanya ~30MB – 50MB**) dan dapat di-deploy dengan mudah di **aaPanel**:
+
+1. **Install Node.js di aaPanel**:
+   - Masuk ke **App Store** di aaPanel -> Cari dan pasang **Node Project Manager** (Pilih Node v22.x atau v20.x).
+2. **Clone Repositori**:
+   ```bash
+   cd /www/wwwroot
+   git clone https://github.com/iqbalmusyaffa/restapi-Data-Wilayah-Administratif-.git api-wilayah
+   cd api-wilayah
+   cp .env.example .env
+   npm install
+   npm run seed
+   ```
+3. **Tambahkan Node Project di aaPanel**:
+   - Buka menu **Website** -> Tab **Node project** -> Klik **Add Node project**.
+   - Path: `/www/wwwroot/api-wilayah`
+   - Run Opt: `server.js` (Port: `3000`).
+   - Domain: Masukkan domain/subdomain Anda (misal: `api.domainkamu.com`).
+4. **Pasang SSL Gratis (HTTPS)**:
+   - Buka pengaturan domain di aaPanel -> Tab **SSL** -> Centang **Let's Encrypt** -> Klik **Apply**.
+
+---
+
 ## 📦 Koleksi Postman
 File `postman_collection.json` sudah tersedia di repositori ini dan dapat langsung diimpor ke aplikasi **Postman** atau **Insomnia** untuk pengujian menyeluruh.
 
@@ -267,3 +345,4 @@ File `postman_collection.json` sudah tersedia di repositori ini dan dapat langsu
 
 ## 📜 Lisensi
 Proyek ini didistribusikan di bawah lisensi **MIT License** - Bebas digunakan dan dimodifikasi untuk kebutuhan komersial maupun non-komersial.
+

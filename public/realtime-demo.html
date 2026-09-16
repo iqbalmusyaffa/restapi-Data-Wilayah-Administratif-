@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supabase Realtime Demo - Data Wilayah Indonesia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #3ecf8e;
+      --accent-glow: rgba(62, 207, 142, 0.2);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+      line-height: 1.5;
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .badge-supabase {
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.3); }
+    }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 850px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      backdrop-filter: blur(12px);
+    }
+    h2 { font-size: 1.15rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+    input, select, button {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #1e293b;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+    input:focus { outline: none; border-color: var(--accent); }
+    button.btn-primary {
+      background: var(--accent);
+      color: #0f172a;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .log-box {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      height: 280px;
+      overflow-y: auto;
+      padding: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+    }
+    .log-entry { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .log-tag { font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-right: 6px; }
+    .tag-insert { background: rgba(62, 207, 142, 0.2); color: #3ecf8e; }
+    .tag-update { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    .tag-delete { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+    .table-box { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.85rem; }
+    .table-box th, .table-box td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+    .table-box th { color: var(--text-muted); font-weight: 600; }
+    .code-block {
+      background: #090d16;
+      padding: 12px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: #a7f3d0;
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1 style="font-size: 1.4rem; font-weight: 800;">⚡ Supabase Realtime Live Monitor</h1>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">Live Broadcast Update Data Wilayah & Tingkat RT/RW/Dusun</p>
+      </div>
+      <div class="badge-supabase">
+        <span class="dot" id="status-dot"></span>
+        <span id="status-text">Disconnected</span>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- KONEKSI & TEST INSERT -->
+      <div class="card">
+        <h2>🔌 1. Pengaturan Koneksi Supabase</h2>
+        <div class="form-group">
+          <label>SUPABASE PROJECT URL</label>
+          <input type="text" id="supabase-url" placeholder="https://xyzcompany.supabase.co">
+        </div>
+        <div class="form-group">
+          <label>SUPABASE ANON KEY</label>
+          <input type="password" id="supabase-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6...">
+        </div>
+        <button class="btn-primary" id="btn-connect" onclick="connectSupabase()">Hubungkan ke Realtime Channel</button>
+
+        <h2 style="margin-top: 24px;">➕ 2. Simulasi Tambah Data RT Baru (Realtime)</h2>
+        <div class="form-group">
+          <label>ID RW</label>
+          <input type="number" id="input-rw-id" value="1">
+        </div>
+        <div class="form-group">
+          <label>Nomor RT</label>
+          <input type="text" id="input-nomor-rt" value="005">
+        </div>
+        <div class="form-group">
+          <label>Nama Ketua RT</label>
+          <input type="text" id="input-ketua-rt" value="Budi Santoso">
+        </div>
+        <button class="btn-primary" style="background:#3b82f6; color:#fff;" onclick="insertSampleRT()">Kirim Data (Test Broadcast)</button>
+      </div>
+
+      <!-- REALTIME EVENT LOG STREAM -->
+      <div class="card">
+        <h2>📡 Live Event Stream (CDC WebSocket)</h2>
+        <div class="log-box" id="log-box">
+          <div class="log-entry" style="color: var(--text-muted);">
+            Menunggu koneksi ke Supabase... Masukkan URL & Anon Key di samping, lalu klik Hubungkan.
+          </div>
+        </div>
+
+        <h2 style="margin-top: 20px;">📋 Live Data RT Terkini</h2>
+        <table class="table-box" id="table-rt">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>RW ID</th>
+              <th>Nomor RT</th>
+              <th>Nama Ketua</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <tr>
+              <td colspan="4" style="color: var(--text-muted); text-align: center;">Belum ada data event masuk</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CODE SNIPPET -->
+    <div class="card" style="margin-top: 20px;">
+      <h2>💡 Contoh Kode Frontend Client-Side (React / Vue / Vanilla JS)</h2>
+      <div class="code-block">
+// Inisialisasi Supabase Client
+const supabase = supabase.createClient('SUPABASE_URL', 'SUPABASE_ANON_KEY');
+
+// Listen perubahan realtime pada tabel RT
+supabase
+  .channel('rt-channel')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'rt' }, (payload) => {
+    console.log('Perubahan terdeteksi:', payload);
+    // payload.eventType: 'INSERT' | 'UPDATE' | 'DELETE'
+    // payload.new: data baris baru
+  })
+  .subscribe();
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let supabaseClient = null;
+
+    function appendLog(eventType, message) {
+      const logBox = document.getElementById('log-box');
+      const time = new Date().toLocaleTimeString();
+      let tagClass = 'tag-insert';
+      if (eventType === 'UPDATE') tagClass = 'tag-update';
+      if (eventType === 'DELETE') tagClass = 'tag-delete';
+
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = `<span style="color:#64748b;">[${time}]</span> <span class="log-tag ${tagClass}">${eventType}</span> ${message}`;
+      logBox.prepend(entry);
+    }
+
+    function connectSupabase() {
+      const url = document.getElementById('supabase-url').value.trim();
+      const key = document.getElementById('supabase-key').value.trim();
+
+      if (!url || !key) {
+        alert('Harap masukkan Supabase URL dan Anon Key Anda!');
+        return;
+      }
+
+      try {
+        supabaseClient = supabase.createClient(url, key);
+        
+        document.getElementById('status-text').innerText = 'Subscribing...';
+        document.getElementById('status-dot').style.background = '#f59e0b';
+
+        // Subscribe to RT table realtime changes
+        supabaseClient
+          .channel('public:rt')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'rt' }, (payload) => {
+            console.log('Realtime payload:', payload);
+            appendLog(payload.eventType, `RT ${payload.new?.nomor_rt || payload.old?.id} - Ketua: ${payload.new?.nama_ketua || '-'}`);
+            
+            if (payload.eventType === 'INSERT' && payload.new) {
+              const tbody = document.getElementById('table-body');
+              if (tbody.innerHTML.includes('Belum ada data')) tbody.innerHTML = '';
+              const tr = document.createElement('tr');
+              tr.innerHTML = `<td>${payload.new.id}</td><td>${payload.new.rw_id}</td><td><b>RT ${payload.new.nomor_rt}</b></td><td>${payload.new.nama_ketua || '-'}</td>`;
+              tbody.prepend(tr);
+            }
+          })
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              document.getElementById('status-text').innerText = 'Connected (Live)';
+              document.getElementById('status-dot').style.background = '#3ecf8e';
+              appendLog('INFO', 'Berhasil terhubung ke Supabase Realtime channel [public:rt]!');
+            }
+          });
+      } catch (err) {
+        alert('Gagal menghubungkan: ' + err.message);
+      }
+    }
+
+    async function insertSampleRT() {
+      if (!supabaseClient) {
+        alert('Hubungkan ke Supabase terlebih dahulu!');
+        return;
+      }
+      const rw_id = Number(document.getElementById('input-rw-id').value);
+      const nomor_rt = document.getElementById('input-nomor-rt').value;
+      const nama_ketua = document.getElementById('input-ketua-rt').value;
+
+      const { data, error } = await supabaseClient.from('rt').insert([{
+        rw_id,
+        nomor_rt,
+        nama_ketua,
+        keterangan: 'Input via Realtime Demo'
+      }]).select();
+
+      if (error) {
+        alert('Gagal insert: ' + error.message);
+      } else {
+        alert('Data RT berhasil dikirim! Perhatikan event log di sebelah kanan.');
+      }
+    }
+  </script>
+</body>
+</html>
