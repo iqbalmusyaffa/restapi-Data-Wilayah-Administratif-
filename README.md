@@ -7,6 +7,7 @@
 [![Database: SQLite](https://img.shields.io/badge/Database-SQLite%20Native-003B57?logo=sqlite&logoColor=white)](https://sqlite.org/)
 [![Database: Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20%2B%20Realtime-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
 [![Hosting: aaPanel Ready](https://img.shields.io/badge/Deploy-aaPanel%20Ready-2E7D32)](README.md#-%EF%B8%8F-panduan-deploy-di-aapanel-nginx--pm2)
+[![Hosting: cPanel Ready](https://img.shields.io/badge/Deploy-cPanel%20Ready-FF6C2C?logo=cpanel&logoColor=white)](README.md#-%EF%B8%8F-panduan-deploy-di-cpanel-setup-nodejs-app)
 
 REST API mandiri (*self-contained*), berkinerja tinggi, dan lengkap untuk menyajikan serta mengelola seluruh data wilayah administratif di Indonesia dari tingkat provinsi hingga tingkat komunitas terkecil (7 tingkat) **beserta Data Kode Pos Resmi dan Metadata Geografis**:
 
@@ -335,6 +336,54 @@ Aplikasi ini sangat ringan (**RAM hanya ~30MB – 50MB**) dan dapat di-deploy de
    - Domain: Masukkan domain/subdomain Anda (misal: `api.domainkamu.com`).
 4. **Pasang SSL Gratis (HTTPS)**:
    - Buka pengaturan domain di aaPanel -> Tab **SSL** -> Centang **Let's Encrypt** -> Klik **Apply**.
+
+---
+
+## 🌐 Panduan Deploy di cPanel (Setup Node.js App)
+
+Aplikasi ini 100% kompatibel dengan fitur **Setup Node.js App (CloudLinux / Phusion Passenger)** di cPanel:
+
+### 1. Upload Source Code ke cPanel
+1. Buka cPanel $\rightarrow$ **File Manager**.
+2. Buat folder baru di luar `public_html` (misal: `/home/username/api-wilayah`).
+3. Upload seluruh file project atau gunakan fitur **Git Version Control** di cPanel untuk clone repositori:
+   ```bash
+   https://github.com/iqbalmusyaffa/restapi-Data-Wilayah-Administratif-.git
+   ```
+
+### 2. Buat Aplikasi Node.js di cPanel
+1. Di cPanel, cari menu **Setup Node.js App** (di kategori *Software*).
+2. Klik tombol **Create Application**:
+   - **Node.js version**: Pilih versi **20.x** atau **22.x** (disarankan).
+   - **Application mode**: `Production`
+   - **Application root**: `api-wilayah` (nama folder yang Anda buat di File Manager).
+   - **Application URL**: Pilih subdomain / domain Anda (misal: `api.domainkamu.com`).
+   - **Application startup file**: `app.js` (atau `server.js`).
+3. Klik **Create**.
+
+### 3. Install Dependencies & Seed Data via Terminal cPanel
+1. Di halaman *Setup Node.js App*, salin perintah *Command for entering to the virtual environment* (yang berwarna kuning/abu-abu di atas halaman), contohnya:
+   ```bash
+   source /home/username/nodevenv/api-wilayah/20/bin/activate && cd /home/username/api-wilayah
+   ```
+2. Buka menu **Terminal** di cPanel, lalu paste perintah virtual environment tersebut.
+3. Jalankan:
+   ```bash
+   # 1. Salin file environment
+   cp .env.example .env
+
+   # 2. Install package
+   npm install
+
+   # 3. Download & generate 90.000+ database wilayah SQLite
+   npm run seed
+   ```
+
+### 4. Restart Aplikasi & Selesai!
+1. Kembali ke menu **Setup Node.js App** di cPanel.
+2. Klik tombol **Restart** pada aplikasi Anda.
+3. Buka subdomain Anda di browser (misal: `https://api.domainkamu.com`).
+   - Dashboard Explorer, Swagger Docs (`/api/docs`), dan seluruh REST API langsung aktif dengan database SQLite lokal tanpa konfigurasi MySQL tambahan!
 
 ---
 
